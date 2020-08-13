@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ModTime.Properties")]
-[assembly: AssemblyDescription("ModTime is a mod for Green Hell.")]
+[assembly: AssemblyDescription("ModTime is a mod for Green Hell, to set day and night time scales in real time minutes.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Dragon Legion")]
 [assembly: AssemblyProduct("ModTime.Properties")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]

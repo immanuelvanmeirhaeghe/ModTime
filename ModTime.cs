@@ -20,9 +20,6 @@ namespace ModTime
 
         public bool IsModTimeActive = false;
 
-        private static float m_DayInMinutesDefault = 20f;
-        private static float m_NightInMinutesDefault = 10f;
-
         private static string m_DayInMinutes = "20";
         private static string m_NightInMinutes = "10";
 
@@ -45,8 +42,6 @@ namespace ModTime
 
         private void Update()
         {
-            UpdateTimeSettings();
-
             if (Input.GetKeyDown(KeyCode.Home))
             {
                 if (!showUI)
@@ -65,18 +60,6 @@ namespace ModTime
                 {
                     EnableCursor(false);
                 }
-            }
-        }
-
-        private static void UpdateTimeSettings()
-        {
-            if (string.IsNullOrEmpty(m_DayInMinutes))
-            {
-                m_DayInMinutes = m_DayInMinutesDefault.ToString();
-            }
-            if (string.IsNullOrEmpty(m_NightInMinutes))
-            {
-                m_NightInMinutes = m_NightInMinutesDefault.ToString();
             }
         }
 
@@ -113,7 +96,7 @@ namespace ModTime
             m_DayInMinutes = GUI.TextField(new Rect(250f, 30f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
 
             GUI.Label(new Rect(30f, 50f, 200f, 20f), "Night time (in minutes of real time)", GUI.skin.label);
-            m_NightInMinutes = GUI.TextField(new Rect(250f, 50f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
+            m_NightInMinutes = GUI.TextField(new Rect(250f, 50f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
 
             if (GUI.Button(new Rect(250f, 70f, 150f, 20f), "Set time", GUI.skin.button))
             {
@@ -145,7 +128,7 @@ namespace ModTime
 
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
-                ShowHUDBigInfo($"Time of day set: Day time passes in {m_DayInMinutes} and night time in {m_NightInMinutes}", "Mod Miner Info", HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo($"Time of day set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes", "Mod Miner Info", HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
