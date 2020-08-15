@@ -42,7 +42,7 @@ namespace ModTime
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Home))
+            if (Input.GetKeyDown(KeyCode.End))
             {
                 if (!showUI)
                 {
@@ -90,15 +90,15 @@ namespace ModTime
 
         private void InitModUI()
         {
-            GUI.Box(new Rect(10f, 10f, 450f, 100f), "ModTime UI", GUI.skin.window);
+            GUI.Box(new Rect(10f, 340f, 450f, 150f), "ModTime UI - Press END to open/close", GUI.skin.window);
 
-            GUI.Label(new Rect(30f, 30f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
-            m_DayInMinutes = GUI.TextField(new Rect(250f, 30f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
+            GUI.Label(new Rect(30f, 360f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
+            m_DayInMinutes = GUI.TextField(new Rect(280f, 360f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
 
-            GUI.Label(new Rect(30f, 50f, 200f, 20f), "Night time (in minutes of real time)", GUI.skin.label);
-            m_NightInMinutes = GUI.TextField(new Rect(250f, 50f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
+            GUI.Label(new Rect(30f, 390f, 200f, 20f), "Night time (in minutes of real time)", GUI.skin.label);
+            m_NightInMinutes = GUI.TextField(new Rect(280f, 390f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
 
-            if (GUI.Button(new Rect(250f, 70f, 150f, 20f), "Set time", GUI.skin.button))
+            if (GUI.Button(new Rect(280f, 420f, 150f, 20f), "Set time", GUI.skin.button))
             {
                 OnClickSetTimeButton();
                 showUI = false;
