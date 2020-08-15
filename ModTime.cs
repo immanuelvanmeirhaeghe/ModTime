@@ -128,7 +128,7 @@ namespace ModTime
 
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
-                ShowHUDBigInfo($"Time of day set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes", "Mod Miner Info", HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo($"Time of day set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes", "Mod Time Info", HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
