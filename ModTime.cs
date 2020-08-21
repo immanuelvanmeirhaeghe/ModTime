@@ -3,6 +3,12 @@ using UnityEngine;
 
 namespace ModTime
 {
+    /// <summary>
+    /// ModTime is a mod for Green Hell
+    /// that allows a player to custom set time scales.
+    /// (only in single player mode - Use ModManager for multiplayer).
+    /// Enable the mod UI by pressing Home.
+    /// </summary>
     public class ModTime : MonoBehaviour
     {
         private static ModTime s_Instance;
@@ -103,6 +109,7 @@ namespace ModTime
             if (showUI)
             {
                 InitData();
+				InitSkinUI();
                 InitModUI();
             }
         }
@@ -110,12 +117,8 @@ namespace ModTime
         private static void InitData()
         {
             hUDManager = HUDManager.Get();
-
             itemsManager = ItemsManager.Get();
-
             player = Player.Get();
-
-            InitSkinUI();
         }
 
         private static void InitSkinUI()
@@ -134,6 +137,12 @@ namespace ModTime
             m_NightInMinutes = GUI.TextField(new Rect(280f, 380f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
 
             CreateSetTimeScalesButton();
+
+            if (GUI.Button(new Rect(280f, 460f, 150f, 20f), "CANCEL", GUI.skin.button))
+            {
+                showUI = false;
+                EnableCursor(false);
+            }
         }
 
         private void CreateSetTimeScalesButton()
