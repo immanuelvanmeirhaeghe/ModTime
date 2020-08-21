@@ -81,7 +81,7 @@ namespace ModTime
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.Pause))
+            if (Input.GetKeyDown(KeyCode.Home))
             {
                 if (!showUI)
                 {
@@ -125,7 +125,7 @@ namespace ModTime
 
         private void InitModUI()
         {
-            GUI.Box(new Rect(10f, 340f, 450f, 150f), "ModTime UI - Press PAUSE to open/close", GUI.skin.window);
+            GUI.Box(new Rect(10f, 340f, 450f, 150f), "ModTime UI - Press HOME to open/close", GUI.skin.window);
 
             GUI.Label(new Rect(30f, 360f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
             m_DayInMinutes = GUI.TextField(new Rect(280f, 360f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
