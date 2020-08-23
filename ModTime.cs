@@ -129,6 +129,11 @@ namespace ModTime
         private void InitModUI()
         {
             GUI.Box(new Rect(10f, 340f, 450f, 150f), "ModTime UI - Press HOME to open/close", GUI.skin.window);
+            if (GUI.Button(new Rect(10f, 770f, 20f, 20f), "X", GUI.skin.button))
+            {
+                showUI = false;
+                EnableCursor(false);
+            }
 
             GUI.Label(new Rect(30f, 360f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
             m_DayInMinutes = GUI.TextField(new Rect(280f, 360f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
@@ -137,12 +142,6 @@ namespace ModTime
             m_NightInMinutes = GUI.TextField(new Rect(280f, 380f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
 
             CreateSetTimeScalesButton();
-
-            if (GUI.Button(new Rect(280f, 460f, 150f, 20f), "CANCEL", GUI.skin.button))
-            {
-                showUI = false;
-                EnableCursor(false);
-            }
         }
 
         private void CreateSetTimeScalesButton()
