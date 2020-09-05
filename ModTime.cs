@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace ModTime
@@ -15,6 +16,8 @@ namespace ModTime
 
         private bool showUI = false;
 
+        public Rect ModTimeWindow = new Rect(10f, 340f, 450f, 150f);
+
         private static ItemsManager itemsManager;
 
         private static Player player;
@@ -22,20 +25,57 @@ namespace ModTime
         private static HUDManager hUDManager;
 
         private static string m_DayInMinutes = "20";
+
         private static string m_NightInMinutes = "10";
 
-        /// <summary>
-        /// ModAPI required security check to enable this mod feature for multiplayer.
-        /// See <see cref="ModManager"/> for implementation.
-        /// Based on request in chat: use  !requestMods in chat as client to request the host to activate mods for them.
-        /// </summary>
-        /// <returns>true if enabled, else false</returns>
-        public bool IsModActiveForMultiplayer => FindObjectOfType(typeof(ModManager.ModManager)) != null ? ModManager.ModManager.AllowModsForMultiplayer : false;
+        public static bool TestRainFXInfoShown { get; private set; }
+
+        public static bool TestRainFxEnabled { get; private set; }
+
+        private static void UpdateRainTest()
+        {
+            if (RainManager.Get().IsRain())
+            {
+                ShowHUDBigInfo("Testing rain FX - check beneath roofs!", $"{nameof(ModTime)} Info", HUDInfoLogTextureType.Count.ToString());
+                TestRainFXInfoShown = true;
+                RainProofing();
+            }
+            else
+            {
+                TestRainFXInfoShown = false;
+            }
+        }
+
+        public static void RainProofing()
+        {
+            try
+            {
+                List<Construction> roofs = Construction.s_AllRoofs;
+                foreach (Construction roof in roofs)
+                {
+                    Vector3Int roofPosition = Vector3Int.FloorToInt(roof.transform.position);
+                    ModAPI.Log.Write($"Roof location x: {roofPosition.x} y: {roofPosition.y} z: {roofPosition.z}");
+                    //RainCutter roofCutter = new RainCutter
+                    //{
+                    //    m_Type = RainCutterType.Tent
+                    //};
+                    //((RainCutterExtended)roofCutter).SetBoxCollider(roof.m_BoxCollider);
+                    //RainManager.Get().RegisterRainCutter(((RainCutterExtended)roofCutter));
+                }
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{nameof(ModTime)}.{nameof(ModTime)}:{nameof(RainProofing)}] throws exception: {exc.Message}");
+            }
+        }
+
+        public bool IsModActiveForMultiplayer => FindObjectOfType(typeof(ModManager.ModManager)) != null && ModManager.ModManager.AllowModsForMultiplayer;
 
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
         public ModTime()
         {
+            useGUILayout = true;
             s_Instance = this;
         }
 
@@ -66,12 +106,12 @@ namespace ModTime
             hudBigInfo.Show(true);
         }
 
-        private static void EnableCursor(bool enabled = false)
+        private void EnableCursor(bool blockPlayer = false)
         {
-            CursorManager.Get().ShowCursor(enabled, false);
+            CursorManager.Get().ShowCursor(blockPlayer, false);
             player = Player.Get();
 
-            if (enabled)
+            if (blockPlayer)
             {
                 player.BlockMoves();
                 player.BlockRotation();
@@ -92,7 +132,6 @@ namespace ModTime
                 if (!showUI)
                 {
                     InitData();
-
                     EnableCursor(true);
                 }
                 // toggle menu
@@ -109,30 +148,33 @@ namespace ModTime
             if (showUI)
             {
                 InitData();
-				InitSkinUI();
-                InitModUI();
+                InitSkinUI();
+                InitWindow();
             }
         }
 
-        private static void InitData()
+        private void InitData()
         {
             hUDManager = HUDManager.Get();
             itemsManager = ItemsManager.Get();
             player = Player.Get();
         }
 
-        private static void InitSkinUI()
+        private void InitSkinUI()
         {
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void InitModUI()
+        private void InitWindow()
         {
-            GUI.Box(new Rect(10f, 340f, 450f, 150f), "ModTime UI - Press HOME to open/close", GUI.skin.window);
-            if (GUI.Button(new Rect(10f, 770f, 20f, 20f), "X", GUI.skin.button))
+            ModTimeWindow = GUI.Window(0, ModTimeWindow, InitModWindow, $"{nameof(ModTime)}", GUI.skin.window);
+        }
+
+        private void InitModWindow(int windowId)
+        {
+            if (GUI.Button(new Rect(440f, 340f, 20f, 20f), "X", GUI.skin.button))
             {
-                showUI = false;
-                EnableCursor(false);
+                CloseWindow();
             }
 
             GUI.Label(new Rect(30f, 360f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
@@ -142,6 +184,14 @@ namespace ModTime
             m_NightInMinutes = GUI.TextField(new Rect(280f, 380f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
 
             CreateSetTimeScalesButton();
+
+            GUI.DragWindow(new Rect(0, 0, 10000, 10000));
+        }
+
+        private void CloseWindow()
+        {
+            showUI = false;
+            EnableCursor(false);
         }
 
         private void CreateSetTimeScalesButton()
@@ -151,8 +201,7 @@ namespace ModTime
                 if (GUI.Button(new Rect(280f, 400f, 150f, 20f), "Set time scales", GUI.skin.button))
                 {
                     OnClickSetTimeScalesButton();
-                    showUI = false;
-                    EnableCursor(false);
+                    CloseWindow();
                 }
             }
             else
@@ -163,7 +212,7 @@ namespace ModTime
             }
         }
 
-        private static void OnClickSetTimeScalesButton()
+        private void OnClickSetTimeScalesButton()
         {
             try
             {
@@ -175,7 +224,7 @@ namespace ModTime
             }
         }
 
-        public static void SetTimeScales()
+        public void SetTimeScales()
         {
             try
             {
@@ -185,13 +234,15 @@ namespace ModTime
 
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
-                ShowHUDBigInfo($"Time scales set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes", "ModTime Info", HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo(
+                    $"Time scales set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes",
+                    $"{nameof(ModTime)} Info",
+                    HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
                 ModAPI.Log.Write($"[{nameof(ModTime)}.{nameof(ModTime)}:{nameof(SetTimeScales)}] throws exception: {exc.Message}");
             }
         }
-
     }
 }
