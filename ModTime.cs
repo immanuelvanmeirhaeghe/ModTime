@@ -167,7 +167,8 @@ namespace ModTime
 
         private void InitWindow()
         {
-            ModTimeWindow = GUI.Window(0, ModTimeWindow, InitModWindow, $"{nameof(ModTime)}", GUI.skin.window);
+            int wid = GetHashCode();
+            ModTimeWindow = GUI.Window(wid, ModTimeWindow, InitModWindow, $"{nameof(ModTime)}", GUI.skin.window);
         }
 
         private void InitModWindow(int windowId)
