@@ -14,9 +14,11 @@ namespace ModTime
     {
         private static ModTime s_Instance;
 
+        private static readonly string ModName = nameof(ModTime);
+
         private bool showUI = false;
 
-        public Rect ModTimeWindow = new Rect(10f, 340f, 450f, 150f);
+        public Rect ModTimeScreen = new Rect(10f, 340f, 450f, 150f);
 
         private static ItemsManager itemsManager;
 
@@ -32,11 +34,11 @@ namespace ModTime
 
         public static bool TestRainFxEnabled { get; private set; }
 
-        private static void UpdateRainTest()
+        private void UpdateRainTest()
         {
             if (RainManager.Get().IsRain())
             {
-                ShowHUDBigInfo("Testing rain FX - check beneath roofs!", $"{nameof(ModTime)} Info", HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo("Testing rain FX - check beneath roofs!", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
                 TestRainFXInfoShown = true;
                 RainProofing();
             }
@@ -46,7 +48,7 @@ namespace ModTime
             }
         }
 
-        public static void RainProofing()
+        public void RainProofing()
         {
             try
             {
@@ -65,7 +67,7 @@ namespace ModTime
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModTime)}.{nameof(ModTime)}:{nameof(RainProofing)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(RainProofing)}] throws exception: {exc.Message}");
             }
         }
 
@@ -84,13 +86,13 @@ namespace ModTime
             return s_Instance;
         }
 
-        public static void ShowHUDInfoLog(string itemID, string localizedTextKey)
+        public void ShowHUDInfoLog(string itemID, string localizedTextKey)
         {
             Localization localization = GreenHellGame.Instance.GetLocalization();
             ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
         }
 
-        public static void ShowHUDBigInfo(string text, string header, string textureName)
+        public void ShowHUDBigInfo(string text, string header, string textureName)
         {
             HUDManager hUDManager = HUDManager.Get();
 
@@ -109,7 +111,6 @@ namespace ModTime
         private void EnableCursor(bool blockPlayer = false)
         {
             CursorManager.Get().ShowCursor(blockPlayer, false);
-            player = Player.Get();
 
             if (blockPlayer)
             {
@@ -168,25 +169,33 @@ namespace ModTime
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModTimeWindow = GUI.Window(wid, ModTimeWindow, InitModWindow, $"{nameof(ModTime)}", GUI.skin.window);
+            ModTimeScreen = GUILayout.Window(wid, ModTimeScreen, InitModTimeScreen, $"{ModName}", GUI.skin.window);
         }
 
-        private void InitModWindow(int windowId)
+        private void InitModTimeScreen(int windowID)
         {
-            if (GUI.Button(new Rect(440f, 340f, 20f, 20f), "X", GUI.skin.button))
+            using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                CloseWindow();
+                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
+                {
+                    CloseWindow();
+                }
+
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Day time (in minutes of real time)", GUI.skin.label);
+                    m_DayInMinutes = GUILayout.TextField(m_DayInMinutes, GUI.skin.textField);
+                }
+
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Night time (in minutes of real time)", GUI.skin.label);
+                    m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
+                }
+
+                CreateSetTimeScalesButton();
             }
-
-            GUI.Label(new Rect(30f, 360f, 200f, 20f), "Day time (in minutes of real time)", GUI.skin.label);
-            m_DayInMinutes = GUI.TextField(new Rect(280f, 360f, 20f, 20f), m_DayInMinutes, GUI.skin.textField);
-
-            GUI.Label(new Rect(30f, 380f, 200f, 20f), "Night time (in minutes of real time)", GUI.skin.label);
-            m_NightInMinutes = GUI.TextField(new Rect(280f, 380f, 20f, 20f), m_NightInMinutes, GUI.skin.textField);
-
-            CreateSetTimeScalesButton();
-
-            GUI.DragWindow(new Rect(0, 0, 10000, 10000));
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
         private void CloseWindow()
@@ -199,17 +208,23 @@ namespace ModTime
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                if (GUI.Button(new Rect(280f, 400f, 150f, 20f), "Set time scales", GUI.skin.button))
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    OnClickSetTimeScalesButton();
-                    CloseWindow();
+                    if (GUILayout.Button("Set time scales", GUI.skin.button))
+                    {
+                        OnClickSetTimeScalesButton();
+                        CloseWindow();
+                    }
                 }
             }
             else
             {
-                GUI.Label(new Rect(30f, 400f, 330f, 20f), "Set time scales", GUI.skin.label);
-                GUI.Label(new Rect(30f, 420f, 330f, 20f), "is only for single player or when host", GUI.skin.label);
-                GUI.Label(new Rect(30f, 440f, 330f, 20f), "Host can activate using ModManager.", GUI.skin.label);
+                using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Set time scales", GUI.skin.label);
+                    GUILayout.Label("is only for single player or when host.", GUI.skin.label);
+                    GUILayout.Label("Host can activate using ModManager.", GUI.skin.label);
+                }
             }
         }
 
@@ -221,7 +236,7 @@ namespace ModTime
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModTime)}.{nameof(ModTime)}:{nameof(OnClickSetTimeScalesButton)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSetTimeScalesButton)}] throws exception: {exc.Message}");
             }
         }
 
@@ -237,12 +252,12 @@ namespace ModTime
 
                 ShowHUDBigInfo(
                     $"Time scales set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes",
-                    $"{nameof(ModTime)} Info",
+                    $"{ModName} Info",
                     HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{nameof(ModTime)}.{nameof(ModTime)}:{nameof(SetTimeScales)}] throws exception: {exc.Message}");
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(SetTimeScales)}] throws exception: {exc.Message}");
             }
         }
     }
