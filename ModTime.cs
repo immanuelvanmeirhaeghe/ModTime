@@ -26,9 +26,18 @@ namespace ModTime
 
         private static HUDManager hUDManager;
 
+        [Tooltip("Time scale in real minutes")]
         private static string m_DayInMinutes = "20";
-
+        [Tooltip("Time scale in real minutes")]
         private static string m_NightInMinutes = "10";
+        [Tooltip("Day")]
+        private static string m_Day = MainLevel.Instance.m_TODSky.Cycle.Day.ToString();
+        [Tooltip("Month")]
+        private static string m_Month = MainLevel.Instance.m_TODSky.Cycle.Month.ToString();
+        [Tooltip("Year")]
+        private static string m_Year = MainLevel.Instance.m_TODSky.Cycle.Year.ToString();
+        [Tooltip("Hour")]
+        private static string m_Hour = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
 
         public static bool TestRainFXInfoShown { get; private set; }
 
@@ -180,20 +189,36 @@ namespace ModTime
                 {
                     CloseWindow();
                 }
-
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("Day time (in minutes of real time)", GUI.skin.label);
+                    GUILayout.Label("Set how many real minutes a day or night takes in game.", GUI.skin.label);
+                    GUILayout.Label("Default scales: Day time: 20 minutes. Night time: 10 minutes.", GUI.skin.label);
+                }
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Day time: ", GUI.skin.label);
                     m_DayInMinutes = GUILayout.TextField(m_DayInMinutes, GUI.skin.textField);
+                    GUILayout.Label("Night time: ", GUI.skin.label);
+                    m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
+                    CreateSetTimeScalesButton();
                 }
-
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("Night time (in minutes of real time)", GUI.skin.label);
-                    m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
+                    GUILayout.Label("Set the current date and time in game.", GUI.skin.label);
+                    GUILayout.Label("Day starts at 5AM. Night starts at 10PM", GUI.skin.label);
                 }
-
-                CreateSetTimeScalesButton();
+                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    //GUILayout.Label("Day: ", GUI.skin.label);
+                    m_Day = GUILayout.TextField(m_Day, GUI.skin.textField);
+                    //GUILayout.Label("Month: ", GUI.skin.label);
+                    m_Month = GUILayout.TextField(m_Month, GUI.skin.textField);
+                    //GUILayout.Label("Year: ", GUI.skin.label);
+                    m_Year = GUILayout.TextField(m_Year, GUI.skin.textField);
+                    //GUILayout.Label("Hour: ", GUI.skin.label);
+                    m_Hour = GUILayout.TextField(m_Hour, GUI.skin.textField);
+                    CreateSetDateTimeButton();
+                }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
@@ -208,13 +233,10 @@ namespace ModTime
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                if (GUILayout.Button("Set time scales", GUI.skin.button))
                 {
-                    if (GUILayout.Button("Set time scales", GUI.skin.button))
-                    {
-                        OnClickSetTimeScalesButton();
-                        CloseWindow();
-                    }
+                    OnClickSetTimeScalesButton();
+                    CloseWindow();
                 }
             }
             else
@@ -240,6 +262,39 @@ namespace ModTime
             }
         }
 
+        private void CreateSetDateTimeButton()
+        {
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                if (GUILayout.Button("Set date time", GUI.skin.button))
+                {
+                    OnClickSetDayTimeButton();
+                    CloseWindow();
+                }
+            }
+            else
+            {
+                using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Set date time", GUI.skin.label);
+                    GUILayout.Label("is only for single player or when host.", GUI.skin.label);
+                    GUILayout.Label("Host can activate using ModManager.", GUI.skin.label);
+                }
+            }
+        }
+
+        private void OnClickSetDayTimeButton()
+        {
+            try
+            {
+                SetDayTime();
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSetDayTimeButton)}] throws exception: {exc.Message}");
+            }
+        }
+
         public void SetTimeScales()
         {
             try
@@ -247,17 +302,41 @@ namespace ModTime
                 TOD_Time m_TOD_Time = MainLevel.Instance.m_TODTime;
                 m_TOD_Time.m_DayLengthInMinutes = Convert.ToSingle(m_DayInMinutes);
                 m_TOD_Time.m_NightLengthInMinutes = Convert.ToSingle(m_NightInMinutes);
-
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
                 ShowHUDBigInfo(
-                    $"Time scales set: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes",
+                    $"<color #3a7a24>Time scales set</color>: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes",
                     $"{ModName} Info",
                     HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
                 ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(SetTimeScales)}] throws exception: {exc.Message}");
+            }
+        }
+
+        public void SetDayTime()
+        {
+            try
+            {
+                TOD_Sky m_TOD_Sky = MainLevel.Instance.m_TODSky;
+                m_TOD_Sky.Cycle.Day = Convert.ToInt32(m_Day);
+                m_TOD_Sky.Cycle.Hour = Convert.ToSingle(m_Hour);
+                m_TOD_Sky.Cycle.Month = Convert.ToInt32(m_Month);
+                m_TOD_Sky.Cycle.Year = Convert.ToInt32(m_Year);
+                MainLevel.Instance.m_TODSky = m_TOD_Sky;
+
+                MainLevel.Instance.SetTimeConnected(m_TOD_Sky.Cycle);
+                MainLevel.Instance.UpdateCurentTimeInMinutes();
+
+                ShowHUDBigInfo(
+                    $"<color #3a7a24>Current in game date set</color>: {m_Day}/{m_Month}/{m_Year}",
+                    $"{ModName} Info",
+                    HUDInfoLogTextureType.Count.ToString());
+            }
+            catch (Exception exc)
+            {
+                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(SetDayTime)}] throws exception: {exc.Message}");
             }
         }
     }
