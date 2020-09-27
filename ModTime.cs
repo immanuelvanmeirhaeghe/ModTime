@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModManager;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -26,17 +27,18 @@ namespace ModTime
 
         private static HUDManager hUDManager;
 
-        [Tooltip("Time scale in real minutes")]
+        private static ModManager.ModManager modManager;
+
         private static string m_DayInMinutes = "20";
-        [Tooltip("Time scale in real minutes")]
+
         private static string m_NightInMinutes = "10";
-        [Tooltip("Day")]
+
         private static string m_Day = MainLevel.Instance.m_TODSky.Cycle.Day.ToString();
-        [Tooltip("Month")]
+
         private static string m_Month = MainLevel.Instance.m_TODSky.Cycle.Month.ToString();
-        [Tooltip("Year")]
+
         private static string m_Year = MainLevel.Instance.m_TODSky.Cycle.Year.ToString();
-        [Tooltip("Hour")]
+
         private static string m_Hour = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
 
         public static bool TestRainFXInfoShown { get; private set; }
@@ -80,7 +82,12 @@ namespace ModTime
             }
         }
 
-        public bool IsModActiveForMultiplayer => FindObjectOfType(typeof(ModManager.ModManager)) != null && ModManager.ModManager.AllowModsForMultiplayer;
+        private void PermissionChanged(bool optionValue)
+        {
+            IsModActiveForMultiplayer = optionValue;
+        }
+
+        public bool IsModActiveForMultiplayer { get; private set; } = false;
 
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
@@ -133,6 +140,11 @@ namespace ModTime
                 player.UnblockRotation();
                 player.UnblockInspection();
             }
+        }
+
+        private void OnEnable()
+        {
+            ModManager.ModManager.onPermissionValueChanged += PermissionChanged;
         }
 
         private void Update()
@@ -200,7 +212,7 @@ namespace ModTime
                     m_DayInMinutes = GUILayout.TextField(m_DayInMinutes, GUI.skin.textField);
                     GUILayout.Label("Night time: ", GUI.skin.label);
                     m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
-                    CreateSetTimeScalesButton();
+                    SetTimeScalesButton();
                 }
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
@@ -217,7 +229,7 @@ namespace ModTime
                     m_Year = GUILayout.TextField(m_Year, GUI.skin.textField);
                     //GUILayout.Label("Hour: ", GUI.skin.label);
                     m_Hour = GUILayout.TextField(m_Hour, GUI.skin.textField);
-                    CreateSetDateTimeButton();
+                    SetDateTimeButton();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -229,7 +241,7 @@ namespace ModTime
             EnableCursor(false);
         }
 
-        private void CreateSetTimeScalesButton()
+        private void SetTimeScalesButton()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
@@ -262,7 +274,7 @@ namespace ModTime
             }
         }
 
-        private void CreateSetDateTimeButton()
+        private void SetDateTimeButton()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
