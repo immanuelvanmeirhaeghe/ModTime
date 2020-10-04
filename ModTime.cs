@@ -27,8 +27,6 @@ namespace ModTime
 
         private static HUDManager hUDManager;
 
-        private static ModManager.ModManager modManager;
-
         private static string m_DayInMinutes = "20";
 
         private static string m_NightInMinutes = "10";
