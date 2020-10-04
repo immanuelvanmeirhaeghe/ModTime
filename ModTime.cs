@@ -17,9 +17,9 @@ namespace ModTime
 
         private static readonly string ModName = nameof(ModTime);
 
-        private bool showUI = false;
+        private bool ShowUI = false;
 
-        public Rect ModTimeScreen = new Rect(10f, 340f, 450f, 150f);
+        public static Rect ModTimeScreen = new Rect(Screen.width / 2f, Screen.height / 2f, 450f, 150f);
 
         private static ItemsManager itemsManager;
 
@@ -41,56 +41,6 @@ namespace ModTime
 
         private static string m_Hour = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
 
-        public static bool TestRainFXInfoShown { get; private set; }
-
-        public static bool TestRainFxEnabled { get; private set; }
-
-        private void UpdateRainTest()
-        {
-            if (RainManager.Get().IsRain())
-            {
-                ShowHUDBigInfo("Testing rain FX - check beneath roofs!", $"{ModName} Info", HUDInfoLogTextureType.Count.ToString());
-                TestRainFXInfoShown = true;
-                RainProofing();
-            }
-            else
-            {
-                TestRainFXInfoShown = false;
-            }
-        }
-
-        public void RainProofing()
-        {
-            try
-            {
-                List<Construction> roofs = Construction.s_AllRoofs;
-                foreach (Construction roof in roofs)
-                {
-                    Vector3Int roofPosition = Vector3Int.FloorToInt(roof.transform.position);
-                    ModAPI.Log.Write($"Roof location x: {roofPosition.x} y: {roofPosition.y} z: {roofPosition.z}");
-                    //RainCutter roofCutter = new RainCutter
-                    //{
-                    //    m_Type = RainCutterType.Tent
-                    //};
-                    //((RainCutterExtended)roofCutter).SetBoxCollider(roof.m_BoxCollider);
-                    //RainManager.Get().RegisterRainCutter(((RainCutterExtended)roofCutter));
-                }
-            }
-            catch (Exception exc)
-            {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(RainProofing)}] throws exception: {exc.Message}");
-            }
-        }
-
-        private void PermissionChanged(bool optionValue)
-        {
-            IsModActiveForMultiplayer = optionValue;
-        }
-
-        public bool IsModActiveForMultiplayer { get; private set; } = false;
-
-        public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
-
         public ModTime()
         {
             useGUILayout = true;
@@ -102,16 +52,30 @@ namespace ModTime
             return s_Instance;
         }
 
-        public void ShowHUDInfoLog(string itemID, string localizedTextKey)
+        private static string HUDBigInfoMessage(string message) => $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.red)}>System</color>\n{message}";
+
+        public void Start()
         {
-            Localization localization = GreenHellGame.Instance.GetLocalization();
-            ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
+            ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
         }
+
+        private void ModManager_onPermissionValueChanged(bool optionValue)
+        {
+            IsModActiveForMultiplayer = optionValue;
+            ShowHUDBigInfo(
+                          (optionValue ?
+                            HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Permission to use mods for multiplayer was granted!</color>")
+                            : HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.yellow)}>Permission to use mods for multiplayer was revoked!</color>")),
+                           $"{ModName} Info",
+                           HUDInfoLogTextureType.Count.ToString());
+        }
+
+        public bool IsModActiveForMultiplayer { get; private set; }
+
+        public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
         public void ShowHUDBigInfo(string text, string header, string textureName)
         {
-            HUDManager hUDManager = HUDManager.Get();
-
             HUDBigInfo hudBigInfo = (HUDBigInfo)hUDManager.GetHUD(typeof(HUDBigInfo));
             HUDBigInfoData hudBigInfoData = new HUDBigInfoData
             {
@@ -122,6 +86,12 @@ namespace ModTime
             };
             hudBigInfo.AddInfo(hudBigInfoData);
             hudBigInfo.Show(true);
+        }
+
+        public void ShowHUDInfoLog(string itemID, string localizedTextKey)
+        {
+            Localization localization = GreenHellGame.Instance.GetLocalization();
+            ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
         }
 
         private void EnableCursor(bool blockPlayer = false)
@@ -142,32 +112,31 @@ namespace ModTime
             }
         }
 
-        private void OnEnable()
-        {
-            ModManager.ModManager.onPermissionValueChanged += PermissionChanged;
-        }
-
         private void Update()
         {
             if (Input.GetKeyDown(KeyCode.Home))
             {
-                if (!showUI)
+                if (!ShowUI)
                 {
                     InitData();
                     EnableCursor(true);
                 }
-                // toggle menu
-                showUI = !showUI;
-                if (!showUI)
+                ToggleShowUI();
+                if (!ShowUI)
                 {
                     EnableCursor(false);
                 }
             }
         }
 
+        private void ToggleShowUI()
+        {
+            ShowUI = !ShowUI;
+        }
+
         private void OnGUI()
         {
-            if (showUI)
+            if (ShowUI)
             {
                 InitData();
                 InitSkinUI();
@@ -201,7 +170,7 @@ namespace ModTime
                 {
                     CloseWindow();
                 }
-                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                using (var verticalScope2 = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUILayout.Label("Set how many real minutes a day or night takes in game.", GUI.skin.label);
                     GUILayout.Label("Default scales: Day time: 20 minutes. Night time: 10 minutes.", GUI.skin.label);
@@ -214,20 +183,20 @@ namespace ModTime
                     m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
                     SetTimeScalesButton();
                 }
-                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                using (var verticalScope3 = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUILayout.Label("Set the current date and time in game.", GUI.skin.label);
                     GUILayout.Label("Day starts at 5AM. Night starts at 10PM", GUI.skin.label);
                 }
                 using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    //GUILayout.Label("Day: ", GUI.skin.label);
+                    GUILayout.Label("Day: ", GUI.skin.label);
                     m_Day = GUILayout.TextField(m_Day, GUI.skin.textField);
-                    //GUILayout.Label("Month: ", GUI.skin.label);
+                    GUILayout.Label("Month: ", GUI.skin.label);
                     m_Month = GUILayout.TextField(m_Month, GUI.skin.textField);
-                    //GUILayout.Label("Year: ", GUI.skin.label);
+                    GUILayout.Label("Year: ", GUI.skin.label);
                     m_Year = GUILayout.TextField(m_Year, GUI.skin.textField);
-                    //GUILayout.Label("Hour: ", GUI.skin.label);
+                    GUILayout.Label("Hour: ", GUI.skin.label);
                     m_Hour = GUILayout.TextField(m_Hour, GUI.skin.textField);
                     SetDateTimeButton();
                 }
@@ -237,7 +206,7 @@ namespace ModTime
 
         private void CloseWindow()
         {
-            showUI = false;
+            ShowUI = false;
             EnableCursor(false);
         }
 
@@ -317,9 +286,10 @@ namespace ModTime
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
                 ShowHUDBigInfo(
-                    $"<color #3a7a24>Time scales set</color>: Day time passes in {m_DayInMinutes} minutes and night time in {m_NightInMinutes} minutes",
-                    $"{ModName} Info",
-                    HUDInfoLogTextureType.Count.ToString());
+                   HUDBigInfoMessage(
+                       $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Time scales set</color>:\nDay time passes in {m_DayInMinutes} realtime minutes\nand night time in {m_NightInMinutes} realtime minutes."),
+                   $"{ModName} Info",
+                   HUDInfoLogTextureType.Count.ToString());
             }
             catch (Exception exc)
             {
@@ -342,7 +312,8 @@ namespace ModTime
                 MainLevel.Instance.UpdateCurentTimeInMinutes();
 
                 ShowHUDBigInfo(
-                    $"<color #3a7a24>Current in game date set</color>: {m_Day}/{m_Month}/{m_Year}",
+                    HUDBigInfoMessage(
+                        $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Date time set</color>:\nToday is {m_Day}/{m_Month}/{m_Year}\nat {m_Hour} o'clock."),
                     $"{ModName} Info",
                     HUDInfoLogTextureType.Count.ToString());
             }
