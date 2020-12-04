@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("ModAPI.ModTime")]
-[assembly: AssemblyDescription("ModTime is a mod for Green Hell, that allows a player to set in-game day and night time scales in real time minutes.")]
+[assembly: AssemblyDescription("ModTime is a mod for Green Hell, that allows a player to set in-game date and day and night time scales in real time minutes.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Dragon Legion")]
 [assembly: AssemblyProduct("ModAPI.ModTime")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.2.8")]
-[assembly: AssemblyFileVersion("1.0.2.8")]
+[assembly: AssemblyVersion("1.0.3.0")]
+[assembly: AssemblyFileVersion("1.0.3.0")]

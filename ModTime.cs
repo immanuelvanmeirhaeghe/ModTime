@@ -5,56 +5,79 @@ using UnityEngine;
 
 namespace ModTime
 {
+    public enum MessageType
+    {
+        Info,
+        Warning,
+        Error
+    }
+
     /// <summary>
     /// ModTime is a mod for Green Hell
-    /// that allows a player to custom set time scales.
-    /// (only in single player mode - Use ModManager for multiplayer).
+    /// that allows a player to custom set date and time scales.
     /// Enable the mod UI by pressing Home.
     /// </summary>
     public class ModTime : MonoBehaviour
     {
-        private static ModTime s_Instance;
+        private static ModTime Instance;
 
         private static readonly string ModName = nameof(ModTime);
-
+        private static readonly float ModScreenTotalWidth = 500f;
+        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenMinWidth = 450f;
+        private static readonly float ModScreenMaxWidth = 550f;
+        private static readonly float ModScreenMinHeight = 50f;
+        private static readonly float ModScreenMaxHeight = 200f;
+        private static float ModScreenStartPositionX { get; set; } = (Screen.width - ModScreenMaxWidth) % ModScreenTotalWidth;
+        private static float ModScreenStartPositionY { get; set; } = (Screen.height - ModScreenMaxHeight) % ModScreenTotalHeight;
+        private static bool IsMinimized { get; set; } = false;
         private bool ShowUI = false;
 
-        public static Rect ModTimeScreen = new Rect(Screen.width / 2f, Screen.height / 2f, 450f, 150f);
+        public static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
 
-        private static ItemsManager itemsManager;
+        private static Player LocalPlayer;
+        private static HUDManager LocalHUDManager;
 
-        private static Player player;
+        public static string DayTimeScaleInMinutes { get; set; } = "20";
 
-        private static HUDManager hUDManager;
+        public static string NightTimeScaleInMinutes { get; set; } = "10";
 
-        private static string m_DayInMinutes = "20";
+        public static string InGameDay { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Day.ToString();
 
-        private static string m_NightInMinutes = "10";
+        public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Month.ToString();
 
-        private static string m_Day = MainLevel.Instance.m_TODSky.Cycle.Day.ToString();
+        public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Year.ToString();
 
-        private static string m_Month = MainLevel.Instance.m_TODSky.Cycle.Month.ToString();
-
-        private static string m_Year = MainLevel.Instance.m_TODSky.Cycle.Year.ToString();
-
-        private static string m_Hour = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
+        public static string InGameHour { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
 
         public ModTime()
         {
             useGUILayout = true;
-            s_Instance = this;
+            Instance = this;
         }
 
         public static ModTime Get()
         {
-            return s_Instance;
+            return Instance;
         }
 
-        private static string HUDBigInfoMessage(string message) => $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.red)}>System</color>\n{message}";
+        public static string OnlyForSinglePlayerOrHostMessage() => $"Only available for single player or when host. Host can activate using ModManager.";
+        public static string DayTimeSetMessage(string day, string month, string year, string hour) => $"Date time set:\nToday is {day}/{month}/{year}\nat {hour} o'clock.";
+        public static string TimeScalesSetMessage(string dayTimeScale, string nightTimeScale) => $"Time scales set:\nDay time passes in {dayTimeScale} realtime minutes\nand night time in {nightTimeScale} realtime minutes.";
+        public static string PermissionChangedMessage(string permission) => $"Permission to use mods and cheats in multiplayer was {permission}";
+        public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
+            => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
         public void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
+        }
+
+        private void HandleException(Exception exc, string methodName)
+        {
+            string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
+            ModAPI.Log.Write(info);
+            ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
@@ -62,34 +85,36 @@ namespace ModTime
             IsModActiveForMultiplayer = optionValue;
             ShowHUDBigInfo(
                           (optionValue ?
-                            HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Permission to use mods for multiplayer was granted!</color>")
-                            : HUDBigInfoMessage($"<color=#{ColorUtility.ToHtmlStringRGBA(Color.yellow)}>Permission to use mods for multiplayer was revoked!</color>")),
-                           $"{ModName} Info",
-                           HUDInfoLogTextureType.Count.ToString());
+                            HUDBigInfoMessage(PermissionChangedMessage($"granted"), MessageType.Info, Color.green)
+                            : HUDBigInfoMessage(PermissionChangedMessage($"revoked"), MessageType.Info, Color.yellow))
+                            );
         }
 
         public bool IsModActiveForMultiplayer { get; private set; }
-
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
-        public void ShowHUDBigInfo(string text, string header, string textureName)
+        public void ShowHUDBigInfo(string text)
         {
-            HUDBigInfo hudBigInfo = (HUDBigInfo)hUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData hudBigInfoData = new HUDBigInfoData
+            string header = $"{ModName} Info";
+            string textureName = HUDInfoLogTextureType.Count.ToString();
+
+            HUDBigInfo bigInfo = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
+            HUDBigInfoData.s_Duration = 2f;
+            HUDBigInfoData bigInfoData = new HUDBigInfoData
             {
                 m_Header = header,
                 m_Text = text,
                 m_TextureName = textureName,
                 m_ShowTime = Time.time
             };
-            hudBigInfo.AddInfo(hudBigInfoData);
-            hudBigInfo.Show(true);
+            bigInfo.AddInfo(bigInfoData);
+            bigInfo.Show(true);
         }
 
         public void ShowHUDInfoLog(string itemID, string localizedTextKey)
         {
             Localization localization = GreenHellGame.Instance.GetLocalization();
-            ((HUDMessages)hUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
+            ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
         }
 
         private void EnableCursor(bool blockPlayer = false)
@@ -98,15 +123,15 @@ namespace ModTime
 
             if (blockPlayer)
             {
-                player.BlockMoves();
-                player.BlockRotation();
-                player.BlockInspection();
+                LocalPlayer.BlockMoves();
+                LocalPlayer.BlockRotation();
+                LocalPlayer.BlockInspection();
             }
             else
             {
-                player.UnblockMoves();
-                player.UnblockRotation();
-                player.UnblockInspection();
+                LocalPlayer.UnblockMoves();
+                LocalPlayer.UnblockRotation();
+                LocalPlayer.UnblockInspection();
             }
         }
 
@@ -144,9 +169,8 @@ namespace ModTime
 
         private void InitData()
         {
-            hUDManager = HUDManager.Get();
-            itemsManager = ItemsManager.Get();
-            player = Player.Get();
+            LocalHUDManager = HUDManager.Get();
+            LocalPlayer = Player.Get();
         }
 
         private void InitSkinUI()
@@ -157,49 +181,42 @@ namespace ModTime
         private void InitWindow()
         {
             int wid = GetHashCode();
-            ModTimeScreen = GUILayout.Window(wid, ModTimeScreen, InitModTimeScreen, $"{ModName}", GUI.skin.window);
+            ModTimeScreen = GUILayout.Window(wid, ModTimeScreen, InitModTimeScreen, ModName,
+                                                                                    GUI.skin.window,
+                                                                                    GUILayout.ExpandWidth(true),
+                                                                                    GUILayout.MinWidth(ModScreenMinWidth),
+                                                                                    GUILayout.MaxWidth(ModScreenMaxWidth),
+                                                                                    GUILayout.ExpandHeight(true),
+                                                                                    GUILayout.MinHeight(ModScreenMinHeight),
+                                                                                    GUILayout.MaxHeight(ModScreenMaxHeight));
         }
 
-        private void InitModTimeScreen(int windowID)
+        private void ScreenMenuBox()
         {
-            using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
+            if (GUI.Button(new Rect(ModTimeScreen.width - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
             {
-                if (GUI.Button(new Rect(430f, 0f, 20f, 20f), "X", GUI.skin.button))
-                {
-                    CloseWindow();
-                }
-                using (var verticalScope2 = new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Set how many real minutes a day or night takes in game.", GUI.skin.label);
-                    GUILayout.Label("Default scales: Day time: 20 minutes. Night time: 10 minutes.", GUI.skin.label);
-                }
-                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Day time: ", GUI.skin.label);
-                    m_DayInMinutes = GUILayout.TextField(m_DayInMinutes, GUI.skin.textField);
-                    GUILayout.Label("Night time: ", GUI.skin.label);
-                    m_NightInMinutes = GUILayout.TextField(m_NightInMinutes, GUI.skin.textField);
-                    SetTimeScalesButton();
-                }
-                using (var verticalScope3 = new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Set the current date and time in game.", GUI.skin.label);
-                    GUILayout.Label("Day starts at 5AM. Night starts at 10PM", GUI.skin.label);
-                }
-                using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Day: ", GUI.skin.label);
-                    m_Day = GUILayout.TextField(m_Day, GUI.skin.textField);
-                    GUILayout.Label("Month: ", GUI.skin.label);
-                    m_Month = GUILayout.TextField(m_Month, GUI.skin.textField);
-                    GUILayout.Label("Year: ", GUI.skin.label);
-                    m_Year = GUILayout.TextField(m_Year, GUI.skin.textField);
-                    GUILayout.Label("Hour: ", GUI.skin.label);
-                    m_Hour = GUILayout.TextField(m_Hour, GUI.skin.textField);
-                    SetDateTimeButton();
-                }
+                CollapseWindow();
             }
-            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+
+            if (GUI.Button(new Rect(ModTimeScreen.width - 20f, 0f, 20f, 20f), "X", GUI.skin.button))
+            {
+                CloseWindow();
+            }
+        }
+
+        private void CollapseWindow()
+        {
+            if (!IsMinimized)
+            {
+                ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
+                IsMinimized = true;
+            }
+            else
+            {
+                ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+                IsMinimized = false;
+            }
+            InitWindow();
         }
 
         private void CloseWindow()
@@ -208,23 +225,85 @@ namespace ModTime
             EnableCursor(false);
         }
 
-        private void SetTimeScalesButton()
+        private void InitModTimeScreen(int windowID)
+        {
+            ModScreenStartPositionX = ModTimeScreen.x;
+            ModScreenStartPositionY = ModTimeScreen.y;
+
+            using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                ScreenMenuBox();
+                if (!IsMinimized)
+                {
+                    TimeScalesBox();
+                    DayTimeBox();
+                }
+            }
+            GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
+        }
+
+        private void DayTimeBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                if (GUILayout.Button("Set time scales", GUI.skin.button))
+                using (var datetimeScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    OnClickSetTimeScalesButton();
-                    CloseWindow();
+                    GUILayout.Label("Set the current date and time in game. Day starts at 5AM. Night starts at 10PM", GUI.skin.label);
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label("Day: ", GUI.skin.label);
+                        InGameDay = GUILayout.TextField(InGameDay, GUI.skin.textField);
+                        GUILayout.Label("Month: ", GUI.skin.label);
+                        InGameMonth = GUILayout.TextField(InGameMonth, GUI.skin.textField);
+                        GUILayout.Label("Year: ", GUI.skin.label);
+                        InGameYear = GUILayout.TextField(InGameYear, GUI.skin.textField);
+                        GUILayout.Label("Hour: ", GUI.skin.label);
+                        InGameHour = GUILayout.TextField(InGameHour, GUI.skin.textField);
+                        if (GUILayout.Button("Set daytime", GUI.skin.button, GUILayout.MaxWidth(200f)))
+                        {
+                            OnClickSetDayTimeButton();
+                        }
+                    }
                 }
             }
             else
             {
-                using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
+                using (var infoScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label("Set time scales", GUI.skin.label);
-                    GUILayout.Label("is only for single player or when host.", GUI.skin.label);
-                    GUILayout.Label("Host can activate using ModManager.", GUI.skin.label);
+                    GUI.color = Color.yellow;
+                    GUILayout.Label(OnlyForSinglePlayerOrHostMessage(), GUI.skin.label);
+                    GUI.color = Color.white;
+                }
+            }
+        }
+
+        private void TimeScalesBox()
+        {
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                using (var timescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUILayout.Label("Set how many real-time minutes a day or night takes in game. Min. 5 and max. 30. Default scales: Day time: 20 minutes. Night time: 10 minutes.", GUI.skin.label);
+                    using (var horizontalScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label("Day time: ", GUI.skin.label);
+                        DayTimeScaleInMinutes = GUILayout.TextField(DayTimeScaleInMinutes, GUI.skin.textField);
+                        GUILayout.Label("Night time: ", GUI.skin.label);
+                        NightTimeScaleInMinutes = GUILayout.TextField(NightTimeScaleInMinutes, GUI.skin.textField);
+                    }
+                    if (GUILayout.Button("Set time scales", GUI.skin.button))
+                    {
+                        OnClickSetTimeScalesButton();
+                    }
+                }
+            }
+            else
+            {
+                using (var infoScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = Color.yellow;
+                    GUILayout.Label(OnlyForSinglePlayerOrHostMessage(), GUI.skin.label);
+                    GUI.color = Color.white;
                 }
             }
         }
@@ -233,32 +312,16 @@ namespace ModTime
         {
             try
             {
-                SetTimeScales();
+                float validDayTimeScale = ValidateTimeScale(DayTimeScaleInMinutes);
+                float validNightTimeScale = ValidateTimeScale(NightTimeScaleInMinutes);
+                if (validDayTimeScale > 0 && validNightTimeScale > 0)
+                {
+                    SetTimeScales(validDayTimeScale, validNightTimeScale);
+                }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSetTimeScalesButton)}] throws exception: {exc.Message}");
-            }
-        }
-
-        private void SetDateTimeButton()
-        {
-            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
-            {
-                if (GUILayout.Button("Set date time", GUI.skin.button))
-                {
-                    OnClickSetDayTimeButton();
-                    CloseWindow();
-                }
-            }
-            else
-            {
-                using (var verticalScope = new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Set date time", GUI.skin.label);
-                    GUILayout.Label("is only for single player or when host.", GUI.skin.label);
-                    GUILayout.Label("Host can activate using ModManager.", GUI.skin.label);
-                }
+                HandleException(exc, nameof(OnClickSetTimeScalesButton));
             }
         }
 
@@ -266,58 +329,97 @@ namespace ModTime
         {
             try
             {
-                SetDayTime();
+                DateTime validGameDate = ValidateDay(InGameDay, InGameMonth, InGameYear, InGameHour);
+                if (validGameDate != DateTime.MinValue)
+                {
+                    SetDayTime(validGameDate.Day, validGameDate.Month, validGameDate.Year, validGameDate.Hour);
+                }
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(OnClickSetDayTimeButton)}] throws exception: {exc.Message}");
+                HandleException(exc, nameof(OnClickSetDayTimeButton));
             }
         }
 
-        public void SetTimeScales()
+        private DateTime ValidateDay(string inGameDay, string inGameMonth, string inGameYear, string inGameHour)
+        {
+            if (int.TryParse(inGameYear, out int year) && int.TryParse(inGameMonth, out int month) && int.TryParse(inGameDay, out int day) && float.TryParse(inGameHour, out float hour))
+            {
+                if (DateTime.TryParse($"{year}-{month}-{day}", out DateTime parsed))
+                {
+                    DateTime dayTime = new DateTime(parsed.Year, parsed.Month, parsed.Day, Convert.ToInt32(hour), 0, 0);
+                    return dayTime;
+                }
+                else
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {year}-{month}-{day}T{hour}:00:00:000Z: please input  a valid date and time", MessageType.Error, Color.red));
+                    return DateTime.MinValue;
+                }
+            }
+            else
+            {
+                ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {inGameYear}-{inGameMonth}-{inGameDay}T{inGameHour}:00:00:000Z: please input valid date and time", MessageType.Error, Color.red));
+                return DateTime.MinValue;
+            }
+        }
+
+        private float ValidateTimeScale(string toValidate)
+        {
+            if (float.TryParse(toValidate, out float count))
+            {
+                if (count <= 5)
+                {
+                    count = 5;
+                }
+                if (count > 30)
+                {
+                    count = 30;
+                }
+                return count;
+            }
+            else
+            {
+                ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {toValidate}: please input numbers only - min. 5 and max. 30", MessageType.Error, Color.red));
+                return -1;
+            }
+        }
+
+        private void SetTimeScales(float dayTimeScale, float nightTimeScale)
         {
             try
             {
                 TOD_Time m_TOD_Time = MainLevel.Instance.m_TODTime;
-                m_TOD_Time.m_DayLengthInMinutes = Convert.ToSingle(m_DayInMinutes);
-                m_TOD_Time.m_NightLengthInMinutes = Convert.ToSingle(m_NightInMinutes);
+                m_TOD_Time.m_DayLengthInMinutes = dayTimeScale;
+                m_TOD_Time.m_NightLengthInMinutes = nightTimeScale;
                 MainLevel.Instance.m_TODTime = m_TOD_Time;
 
-                ShowHUDBigInfo(
-                   HUDBigInfoMessage(
-                       $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Time scales set</color>:\nDay time passes in {m_DayInMinutes} realtime minutes\nand night time in {m_NightInMinutes} realtime minutes."),
-                   $"{ModName} Info",
-                   HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo(HUDBigInfoMessage(TimeScalesSetMessage(dayTimeScale.ToString(), nightTimeScale.ToString()), MessageType.Info, Color.green));
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(SetTimeScales)}] throws exception: {exc.Message}");
+                HandleException(exc, nameof(SetTimeScales));
             }
         }
 
-        public void SetDayTime()
+        private void SetDayTime(int gameDay,int gameMonth, int gameYear, float gameHour )
         {
             try
             {
                 TOD_Sky m_TOD_Sky = MainLevel.Instance.m_TODSky;
-                m_TOD_Sky.Cycle.Day = Convert.ToInt32(m_Day);
-                m_TOD_Sky.Cycle.Hour = Convert.ToSingle(m_Hour);
-                m_TOD_Sky.Cycle.Month = Convert.ToInt32(m_Month);
-                m_TOD_Sky.Cycle.Year = Convert.ToInt32(m_Year);
+                m_TOD_Sky.Cycle.Day = gameDay;
+                m_TOD_Sky.Cycle.Hour = gameHour;
+                m_TOD_Sky.Cycle.Month = gameMonth;
+                m_TOD_Sky.Cycle.Year = gameYear;
                 MainLevel.Instance.m_TODSky = m_TOD_Sky;
 
                 MainLevel.Instance.SetTimeConnected(m_TOD_Sky.Cycle);
                 MainLevel.Instance.UpdateCurentTimeInMinutes();
 
-                ShowHUDBigInfo(
-                    HUDBigInfoMessage(
-                        $"<color=#{ColorUtility.ToHtmlStringRGBA(Color.green)}>Date time set</color>:\nToday is {m_Day}/{m_Month}/{m_Year}\nat {m_Hour} o'clock."),
-                    $"{ModName} Info",
-                    HUDInfoLogTextureType.Count.ToString());
+                ShowHUDBigInfo(HUDBigInfoMessage(DayTimeSetMessage(InGameDay, InGameMonth, InGameYear, InGameHour), MessageType.Info, Color.green));
             }
             catch (Exception exc)
             {
-                ModAPI.Log.Write($"[{ModName}.{ModName}:{nameof(SetDayTime)}] throws exception: {exc.Message}");
+                HandleException(exc, nameof(SetDayTime));
             }
         }
     }
