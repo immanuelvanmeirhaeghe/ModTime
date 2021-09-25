@@ -1,5 +1,6 @@
 ﻿using ModTime.Enums;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using UnityEngine;
@@ -10,7 +11,7 @@ namespace ModTime
 
     /// <summary>
     /// ModTime is a mod for Green Hell, that allows a player to set in-game date and day and night time scales in real time minutes.
-    /// Press HOME (default) or the key configurable in ModAPI to open the mod screen.
+    /// Press OemMinus (default) or the key configurable in ModAPI to open the mod screen.
     /// </summary>
     public class ModTime : MonoBehaviour
     {
@@ -27,11 +28,14 @@ namespace ModTime
         private static readonly string DefaultDayTimeScale = "20";
         private static readonly string DefaultNightTimeScale = "10";
 
-        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Home;
+        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
         private static bool IsMinimized { get; set; } = false;
         private static bool ShowModTimeScreen { get; set; } = false;
         private static float PositionX { get; set; } = StartPositionX;
         private static float PositionY { get; set; } = StartPositionY;
+
+        private int m_FakeDayOffset;
+        private Dictionary<int, WatchData> WatchDataDictionary = new Dictionary<int, WatchData>();
 
         private Color DefaultGuiColor = GUI.color;
         private static ModTime Instance;
@@ -45,10 +49,10 @@ namespace ModTime
         public static Rect ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
         public static string DayTimeScaleInMinutes { get; set; } = DefaultDayTimeScale;
         public static string NightTimeScaleInMinutes { get; set; } = DefaultNightTimeScale;
-        public static string InGameDay { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Day.ToString();
-        public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Month.ToString();
-        public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Year.ToString();
-        public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.Hour.ToString();
+        public static string InGameDay { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Day.ToString();
+        public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Month.ToString();
+        public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Year.ToString();
+        public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
 
         public ModTime()
         {
@@ -76,6 +80,8 @@ namespace ModTime
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
             ModKeybindingId = GetConfigurableKey();
+            InitTimeData();
+            InitCompassData();
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
@@ -120,8 +126,10 @@ namespace ModTime
                     //ModAPI.Log.Write($"XML runtime configuration\n{File.ReadAllText(RuntimeConfigurationFile)}\n");
                 }
 
+                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Alpha").Replace("Oem", "");
+
                 configuredKeyCode = !string.IsNullOrEmpty(configuredKeybinding)
-                                                            ? (KeyCode)Enum.Parse(typeof(KeyCode), configuredKeybinding.Replace("NumPad", "Alpha"))
+                                                            ? (KeyCode)Enum.Parse(typeof(KeyCode), configuredKeybinding)
                                                             : ModKeybindingId;
                 //ModAPI.Log.Write($"Configured key code: { configuredKeyCode }");
                 return configuredKeyCode;
@@ -286,7 +294,7 @@ namespace ModTime
                 {
                     ModOptionsBox();
                     TimeScalesBox();
-                    DateTimeBox();
+                    DateTimeCycleBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -349,7 +357,7 @@ namespace ModTime
             }
         }
 
-        private void DateTimeBox()
+        private void DateTimeCycleBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
@@ -441,7 +449,7 @@ namespace ModTime
                 DateTime validGameDate = ValidateDay(InGameDay, InGameMonth, InGameYear, InGameTime);
                 if (validGameDate != DateTime.MinValue)
                 {
-                    SetDayTime(validGameDate.Day, validGameDate.Month, validGameDate.Year, validGameDate.Hour);
+                    SetDateTimeCycle(validGameDate.Day, validGameDate.Month, validGameDate.Year, validGameDate.Hour);
                 }
             }
             catch (Exception exc)
@@ -510,17 +518,13 @@ namespace ModTime
             }
         }
 
-        private void SetDayTime(int gameDay,int gameMonth, int gameYear, float gameHour )
+        private void SetDateTimeCycle(int gameDay,int gameMonth, int gameYear, int gameHour )
         {
             try
             {
                 TOD_Sky m_TOD_Sky = MainLevel.Instance.m_TODSky;
-                m_TOD_Sky.Cycle.Day = gameDay;
-                m_TOD_Sky.Cycle.Hour = gameHour;
-                m_TOD_Sky.Cycle.Month = gameMonth;
-                m_TOD_Sky.Cycle.Year = gameYear;
+                m_TOD_Sky.Cycle.DateTime = new DateTime(gameYear, gameMonth, gameDay, gameHour,0,0);
                 MainLevel.Instance.m_TODSky = m_TOD_Sky;
-
                 MainLevel.Instance.SetTimeConnected(m_TOD_Sky.Cycle);
                 MainLevel.Instance.UpdateCurentTimeInMinutes();
 
@@ -528,8 +532,101 @@ namespace ModTime
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(SetDayTime));
+                HandleException(exc, nameof(SetDateTimeCycle));
             }
         }
+
+        private void InitTimeData()
+        {
+            WatchTimeData watchTimeData = new WatchTimeData();
+            watchTimeData.m_Parent = Watch.Get().m_Canvas.transform.Find("Time").gameObject;
+            watchTimeData.m_TimeHourDec = watchTimeData.m_Parent.transform.Find("HourDec").GetComponent<Text>();
+            watchTimeData.m_TimeHourUnit = watchTimeData.m_Parent.transform.Find("HourUnit").GetComponent<Text>();
+            watchTimeData.m_TimeMinuteDec = watchTimeData.m_Parent.transform.Find("MinuteDec").GetComponent<Text>();
+            watchTimeData.m_TimeMinuteUnit = watchTimeData.m_Parent.transform.Find("MinuteUnit").GetComponent<Text>();
+            watchTimeData.m_DayDec = watchTimeData.m_Parent.transform.Find("DayDec").GetComponent<Text>();
+            watchTimeData.m_DayUnit = watchTimeData.m_Parent.transform.Find("DayUnit").GetComponent<Text>();
+            watchTimeData.m_DayName = watchTimeData.m_Parent.transform.Find("DayName").GetComponent<Text>();
+            watchTimeData.m_MonthName = watchTimeData.m_Parent.transform.Find("MonthName").GetComponent<Text>();
+            watchTimeData.m_Parent.SetActive(value: false);
+            WatchDataDictionary.Add(0, watchTimeData);
+        }
+
+        private void InitCompassData()
+        {
+            WatchCompassData watchCompassData = new WatchCompassData();
+            watchCompassData.m_Parent = Watch.Get().m_Canvas.transform.Find("Compass").gameObject;
+            watchCompassData.m_Compass = watchCompassData.m_Parent.transform.Find("CompassIcon").gameObject;
+            watchCompassData.m_GPSCoordinates = watchCompassData.m_Parent.transform.Find("S_Coordinates").GetComponent<Text>();
+            watchCompassData.m_GPSCoordinatesW = watchCompassData.m_Parent.transform.Find("W_Coordinates").GetComponent<Text>();
+            watchCompassData.m_Parent.SetActive(value: false);
+            WatchDataDictionary.Add(3, watchCompassData);
+        }
+
+        private void GetWatchData()
+        {
+            WatchTimeData watchTimeData = (WatchTimeData)WatchDataDictionary[0];
+            DateTime dateTime = MainLevel.Instance.m_TODSky.Cycle.DateTime.AddDays(m_FakeDayOffset);
+            int hour = dateTime.Hour;
+            int num2 = hour % 10;
+            int num3 = (hour - num2) / 10;
+            int minute = dateTime.Minute;
+            int num4 = minute % 10;
+            int num5 = (minute - num4) / 10;
+            watchTimeData.m_TimeHourDec.text = num3.ToString();
+            watchTimeData.m_TimeHourUnit.text = num2.ToString();
+            watchTimeData.m_TimeMinuteDec.text = num5.ToString();
+            watchTimeData.m_TimeMinuteUnit.text = num4.ToString();
+            Localization localization = GreenHellGame.Instance.GetLocalization();
+            string key = "Watch_" + EnumUtils<DayOfWeek>.GetName(dateTime.DayOfWeek);
+            watchTimeData.m_DayName.text = localization.Get(key);
+            switch (dateTime.Month)
+            {
+                case 1:
+                    key = "Watch_January";
+                    break;
+                case 2:
+                    key = "Watch_February";
+                    break;
+                case 3:
+                    key = "Watch_March";
+                    break;
+                case 4:
+                    key = "Watch_April";
+                    break;
+                case 5:
+                    key = "Watch_May";
+                    break;
+                case 6:
+                    key = "Watch_June";
+                    break;
+                case 7:
+                    key = "Watch_July";
+                    break;
+                case 8:
+                    key = "Watch_August";
+                    break;
+                case 9:
+                    key = "Watch_September";
+                    break;
+                case 10:
+                    key = "Watch_October";
+                    break;
+                case 11:
+                    key = "Watch_November";
+                    break;
+                case 12:
+                    key = "Watch_December";
+                    break;
+            }
+            watchTimeData.m_MonthName.text = localization.Get(key);
+            int day = dateTime.Day;
+            int num6 = day % 10;
+            int num7 = (day - num6) / 10;
+            watchTimeData.m_DayDec.text = num7.ToString();
+            watchTimeData.m_DayUnit.text = num6.ToString();
+
+        }
+
     }
 }
