@@ -271,12 +271,12 @@ namespace ModTime
         {
             if (!IsMinimized)
             {
-                ModTimeScreen = new Rect(PositionX, PositionY, TotalWidth, MinHeight);
+                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, MinHeight);
                 IsMinimized = true;
             }
             else
             {
-                ModTimeScreen = new Rect(PositionX, PositionY, TotalWidth, TotalHeight);
+                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
                 IsMinimized = false;
             }
             InitWindow();
