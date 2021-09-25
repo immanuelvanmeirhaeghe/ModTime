@@ -286,7 +286,7 @@ namespace ModTime
                 {
                     ModOptionsBox();
                     TimeScalesBox();
-                    DayTimeBox();
+                    DateTimeBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -349,21 +349,21 @@ namespace ModTime
             }
         }
 
-        private void DayTimeBox()
+        private void DateTimeBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 using (var daytimeScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = Color.cyan;
-                    GUILayout.Label($"Current date in game: day / month / year: {InGameDay} / {InGameMonth} / {InGameYear}", GUI.skin.label);
-                    GUILayout.Label($"Current time in game: {InGameTime}", GUI.skin.label);
+                    GUILayout.Label($"Current date (day / month / year): {InGameDay} / {InGameMonth} / {InGameYear}", GUI.skin.label);
+                    GUILayout.Label($"Current time: {InGameTime}", GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label("Change the date (day / month / year) and time in game. Then click [Change datetime]", GUI.skin.label);
                     using (var changedaytimeScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("New date: ", GUI.skin.label);
+                        GUILayout.Label("New date (day / month / year): ", GUI.skin.label);
                         InGameDay = GUILayout.TextField(InGameDay, GUI.skin.textField);
                         GUILayout.Label(" / ", GUI.skin.label);
                         InGameMonth = GUILayout.TextField(InGameMonth, GUI.skin.textField);
