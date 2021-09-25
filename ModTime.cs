@@ -31,13 +31,18 @@ namespace ModTime
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
         private static bool IsMinimized { get; set; } = false;
         private static bool ShowModTimeScreen { get; set; } = false;
-        private static float PositionX { get; set; } = StartPositionX;
-        private static float PositionY { get; set; } = StartPositionY;
+        private static float PositionX { get; set; }
+        private static float PositionY { get; set; }
 
-        private int m_FakeDayOffset;
+        private int FakeDayOffset;
         private Dictionary<int, WatchData> WatchDataDictionary = new Dictionary<int, WatchData>();
+        private float m_CurentTimeInMinutes;
+        private float m_CurentTimeDeltaInMinutes;
+        private float m_HourWhenConnected;
+        private float m_GameTimeWhenConnected;
+        private int m_DayWhenConnected;
 
-        private Color DefaultGuiColor = GUI.color;
+        private static Color DefaultGuiColor = GUI.color;
         private static ModTime Instance;
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
@@ -53,6 +58,8 @@ namespace ModTime
         public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Month.ToString();
         public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Year.ToString();
         public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
+        public bool ProgressTime { get; private set; }
+        public bool RainOption { get; private set; }
 
         public ModTime()
         {
@@ -81,7 +88,6 @@ namespace ModTime
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
             ModKeybindingId = GetConfigurableKey();
             InitTimeData();
-            InitCompassData();
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
@@ -309,12 +315,47 @@ namespace ModTime
                     StatusForMultiplayer();
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label($"To show or hide this screen, toggle press [{ModKeybindingId}]", GUI.skin.label);
+                    ProgressTime = GUILayout.Toggle(ProgressTime, ProgressTimeStatusChanged(ProgressTime), GUI.skin.toggle);
+                    ToggleProgressTime();
+                    RainOption = GUILayout.Toggle(RainOption, RainStatusChanged(RainOption), GUI.skin.toggle);
+                    ToggleWeather();
                 }
             }
             else
             {
                 OnlyForSingleplayerOrWhenHostBox();
             }
+        }
+
+        public void ToggleWeather()
+        {
+            if (RainOption)
+            {
+                RainManager.Get().ScenarioStartRain();
+            }
+            else
+            {
+                RainManager.Get().ScenarioStopRain();
+            }
+        }
+
+        private static string RainStatusChanged(bool rainOption)
+        {
+            string msg;
+            if (rainOption == true)
+            {
+                GUI.color = Color.cyan;
+                msg = $"It has started raining. ";
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                msg = $"Raining has stopped. ";
+            }
+            GUI.color = DefaultGuiColor;
+            msg += $"Click to change weather.";
+
+            return msg;
         }
 
         private void OnlyForSingleplayerOrWhenHostBox()
@@ -364,8 +405,7 @@ namespace ModTime
                 using (var daytimeScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = Color.cyan;
-                    GUILayout.Label($"Current date (day / month / year): {InGameDay} / {InGameMonth} / {InGameYear}", GUI.skin.label);
-                    GUILayout.Label($"Current time: {InGameTime}", GUI.skin.label);
+                    GUILayout.Label($"It is now {GetWatchData()}", GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label("Change the date (day / month / year) and time in game. Then click [Change datetime]", GUI.skin.label);
@@ -399,13 +439,11 @@ namespace ModTime
                 using (var timescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = Color.cyan;
-                    GUILayout.Label($"Current daytime scale: {DayTimeScaleInMinutes} minutes", GUI.skin.label);
-                    GUILayout.Label($"Current nighttime scale: {NightTimeScaleInMinutes} minutes", GUI.skin.label);
+                    GUILayout.Label($"Daytime scale: {DayTimeScaleInMinutes} minutes", GUI.skin.label);
+                    GUILayout.Label($"Nighttime scale: {NightTimeScaleInMinutes} minutes", GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
-                    GUILayout.Label("Set in how many real-time minutes a day and night passes in game. Then clicck [Set time scales]", GUI.skin.label);
-                    GUILayout.Label($"Default daytime scale: {DefaultDayTimeScale} minutes.", GUI.skin.label);
-                    GUILayout.Label($"Default nighttime scale:  {DefaultNightTimeScale} minutes.", GUI.skin.label);
+                    GUILayout.Label("Set daytime and nighttime scales, in real-time minutes. Then click [Set time scales]", GUI.skin.label);
                     using (var changescalesScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Daytime scale: ", GUI.skin.label);
@@ -423,6 +461,37 @@ namespace ModTime
             {
                 OnlyForSingleplayerOrWhenHostBox();
             }
+        }
+
+        public void ToggleProgressTime()
+        {
+            if (ProgressTime)
+            {
+                MainLevel.Instance.StartDayTimeProgress();
+            }
+            else
+            {
+                MainLevel.Instance.StopDayTimeProgress(); ;
+            }
+        }
+
+        public static string ProgressTimeStatusChanged(bool status)
+        {
+            string msg;
+            if (status == true)
+            {
+                GUI.color = Color.cyan;
+                msg = $"Time is running. ";
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                msg = $"Time has stopped. ";
+            }
+            GUI.color = DefaultGuiColor;
+            msg += $"Click to change time progress.";
+
+            return msg;
         }
 
         private void OnClickSetTimeScalesButton()
@@ -536,6 +605,15 @@ namespace ModTime
             }
         }
 
+        public bool IsNight()
+        {
+            if (!(MainLevel.Instance.m_TODSky.Cycle.Hour < 5f))
+            {
+                return MainLevel.Instance.m_TODSky.Cycle.Hour > 22f;
+            }
+            return true;
+        }
+
         private void InitTimeData()
         {
             WatchTimeData watchTimeData = new WatchTimeData();
@@ -552,80 +630,22 @@ namespace ModTime
             WatchDataDictionary.Add(0, watchTimeData);
         }
 
-        private void InitCompassData()
-        {
-            WatchCompassData watchCompassData = new WatchCompassData();
-            watchCompassData.m_Parent = Watch.Get().m_Canvas.transform.Find("Compass").gameObject;
-            watchCompassData.m_Compass = watchCompassData.m_Parent.transform.Find("CompassIcon").gameObject;
-            watchCompassData.m_GPSCoordinates = watchCompassData.m_Parent.transform.Find("S_Coordinates").GetComponent<Text>();
-            watchCompassData.m_GPSCoordinatesW = watchCompassData.m_Parent.transform.Find("W_Coordinates").GetComponent<Text>();
-            watchCompassData.m_Parent.SetActive(value: false);
-            WatchDataDictionary.Add(3, watchCompassData);
-        }
-
-        private void GetWatchData()
+        private string GetWatchData()
         {
             WatchTimeData watchTimeData = (WatchTimeData)WatchDataDictionary[0];
-            DateTime dateTime = MainLevel.Instance.m_TODSky.Cycle.DateTime.AddDays(m_FakeDayOffset);
-            int hour = dateTime.Hour;
-            int num2 = hour % 10;
-            int num3 = (hour - num2) / 10;
-            int minute = dateTime.Minute;
-            int num4 = minute % 10;
-            int num5 = (minute - num4) / 10;
-            watchTimeData.m_TimeHourDec.text = num3.ToString();
-            watchTimeData.m_TimeHourUnit.text = num2.ToString();
-            watchTimeData.m_TimeMinuteDec.text = num5.ToString();
-            watchTimeData.m_TimeMinuteUnit.text = num4.ToString();
-            Localization localization = GreenHellGame.Instance.GetLocalization();
-            string key = "Watch_" + EnumUtils<DayOfWeek>.GetName(dateTime.DayOfWeek);
-            watchTimeData.m_DayName.text = localization.Get(key);
-            switch (dateTime.Month)
-            {
-                case 1:
-                    key = "Watch_January";
-                    break;
-                case 2:
-                    key = "Watch_February";
-                    break;
-                case 3:
-                    key = "Watch_March";
-                    break;
-                case 4:
-                    key = "Watch_April";
-                    break;
-                case 5:
-                    key = "Watch_May";
-                    break;
-                case 6:
-                    key = "Watch_June";
-                    break;
-                case 7:
-                    key = "Watch_July";
-                    break;
-                case 8:
-                    key = "Watch_August";
-                    break;
-                case 9:
-                    key = "Watch_September";
-                    break;
-                case 10:
-                    key = "Watch_October";
-                    break;
-                case 11:
-                    key = "Watch_November";
-                    break;
-                case 12:
-                    key = "Watch_December";
-                    break;
-            }
-            watchTimeData.m_MonthName.text = localization.Get(key);
-            int day = dateTime.Day;
-            int num6 = day % 10;
-            int num7 = (day - num6) / 10;
-            watchTimeData.m_DayDec.text = num7.ToString();
-            watchTimeData.m_DayUnit.text = num6.ToString();
 
+            var num3 = watchTimeData.m_TimeHourDec.text;
+          var num2 =  watchTimeData.m_TimeHourUnit.text;
+            var num5 = watchTimeData.m_TimeMinuteDec.text;
+            var num4 = watchTimeData.m_TimeMinuteUnit.text;
+            var num9 = watchTimeData.m_DayDec.text;
+            var num8 = watchTimeData.m_DayUnit.text;
+            var num7 = watchTimeData.m_DayName.text;
+            var num6 = watchTimeData.m_MonthName.text;
+
+            string timeInGame = $"{num3}{num2}:{num5}{num4} o'clock on {num7}, {num9} {num6}";
+
+            return timeInGame;
         }
 
     }
