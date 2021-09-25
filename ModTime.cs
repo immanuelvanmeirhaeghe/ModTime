@@ -58,8 +58,8 @@ namespace ModTime
         public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Month.ToString();
         public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Year.ToString();
         public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
-        public bool ProgressTime { get; private set; }
-        public bool RainOption { get; private set; }
+        public bool ProgressTime { get; private set; } = true;
+        public bool RainOption { get; private set; } = false;
 
         public ModTime()
         {
@@ -247,10 +247,10 @@ namespace ModTime
                                                                                     GUI.skin.window,
                                                                                     GUILayout.ExpandWidth(true),
                                                                                     GUILayout.MinWidth(MinWidth),
-                                                                                    GUILayout.MaxWidth(TotalWidth),
+                                                                                    GUILayout.MaxWidth(MaxWidth),
                                                                                     GUILayout.ExpandHeight(true),
                                                                                     GUILayout.MinHeight(MinHeight),
-                                                                                    GUILayout.MaxHeight(TotalHeight)
+                                                                                    GUILayout.MaxHeight(MaxHeight)
                                                                                     );
         }
 
@@ -587,12 +587,12 @@ namespace ModTime
             }
         }
 
-        private void SetDateTimeCycle(int gameDay,int gameMonth, int gameYear, int gameHour )
+        private void SetDateTimeCycle(int gameDay, int gameMonth, int gameYear, int gameHour)
         {
             try
             {
                 TOD_Sky m_TOD_Sky = MainLevel.Instance.m_TODSky;
-                m_TOD_Sky.Cycle.DateTime = new DateTime(gameYear, gameMonth, gameDay, gameHour,0,0);
+                m_TOD_Sky.Cycle.DateTime = new DateTime(gameYear, gameMonth, gameDay, gameHour, 0, 0);
                 MainLevel.Instance.m_TODSky = m_TOD_Sky;
                 MainLevel.Instance.SetTimeConnected(m_TOD_Sky.Cycle);
                 MainLevel.Instance.UpdateCurentTimeInMinutes();
@@ -635,7 +635,7 @@ namespace ModTime
             WatchTimeData watchTimeData = (WatchTimeData)WatchDataDictionary[0];
 
             var num3 = watchTimeData.m_TimeHourDec.text;
-          var num2 =  watchTimeData.m_TimeHourUnit.text;
+            var num2 = watchTimeData.m_TimeHourUnit.text;
             var num5 = watchTimeData.m_TimeMinuteDec.text;
             var num4 = watchTimeData.m_TimeMinuteUnit.text;
             var num9 = watchTimeData.m_DayDec.text;
