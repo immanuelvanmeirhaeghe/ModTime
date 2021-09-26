@@ -1,10 +1,7 @@
-﻿using ModManager;
-using ModTime.Enums;
+﻿using ModTime.Enums;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Xml;
 using UnityEngine;
 using UnityEngine.UI;
@@ -31,6 +28,8 @@ namespace ModTime
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
         private static RainManager LocalRainManager;
+        private static Watch LocalWatch;
+        private Dictionary<int, WatchData> LocalWatchData = new Dictionary<int, WatchData>();
 
         private static float ModScreenStartPositionX { get; set; } = ((float)Screen.width - ModScreenMaxWidth) % ModScreenTotalWidth;
         private static float ModScreenStartPositionY { get; set; } = ((float)Screen.height - ModScreenMaxHeight) % ModScreenTotalHeight;
@@ -61,8 +60,8 @@ namespace ModTime
 
         public static string OnlyForSinglePlayerOrHostMessage()
             => "Only available for single player or when host. Host can activate using ModManager.";
-        public static string DayTimeSetMessage(string day, string month, string year)
-            => $"Date time set:\nToday is " + day + "/" + month + "/" + year + "\n";
+        public static string DayTimeSetMessage(string daytime)
+            => $"Daytime fast forwarded. It is {daytime}";
         public static string TimeScalesSetMessage(string dayTimeScale, string nightTimeScale)
             => $"Time scales set:\nDay time passes in " + dayTimeScale + " realtime minutes\nand night time in " + nightTimeScale + " realtime minutes.";
         public static string PermissionChangedMessage(string permission, string reason)
@@ -217,6 +216,8 @@ namespace ModTime
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
             LocalRainManager = RainManager.Get();
+            LocalWatch = Watch.Get();
+            InitTimeData();
         }
 
         private void InitSkinUI()
@@ -271,36 +272,27 @@ namespace ModTime
                 ScreenMenuBox();
                 if (!IsMinimized)
                 {
-                    ModOptionsBox();
+                    OptionsBox();
                     TimeScalesBox();
-                    TimeOfDateTimeBox();
+                    TimeOfDayBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void ModOptionsBox()
+        private void OptionsBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                GUI.color = Color.cyan;
-                string rainOptionMessage = $"Rain { (RainEnabled ? "is falling" : "has stopped") }";
-                GUILayout.Label(rainOptionMessage, GUI.skin.label);
-                string timeOfDayMessage = $"Time of day is { (TimeOfDayIsDaytime ? "daytime, after 5AM" : "night time, after 11PM") }";
-                GUILayout.Label(timeOfDayMessage, GUI.skin.label);
-                string progressTimeMessage = $"Time { (ProgressTime ? "is progressing" : "has stopped") }. Check you watch with [F]";
-                GUILayout.Label(progressTimeMessage, GUI.skin.label);
-
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
+                    GUILayout.Label($"To toggle the main mod UI, press [{ModKeybindingId}]", GUI.skin.label);
+
+                    GUILayout.Label("Multiplayer options: ", GUI.skin.label);
                     MultiplayerOptionBox();
 
-                    GUI.color = DefaultGuiColor;
-                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
-                    GUILayout.Label($"Options for time of date and weather: ", GUI.skin.label);
-                    RainOptionBox(rainOptionMessage);
-                    TimeOfDateTimeOptionBox(timeOfDayMessage);
-                    ProgressTimeOptionBox(progressTimeMessage);
+                    GUILayout.Label($"Weather options: ", GUI.skin.label);
+                    RainOptionBox();
                 }
             }
             else
@@ -309,65 +301,46 @@ namespace ModTime
             }
         }
 
-        private void ProgressTimeOptionBox(string progressTimeMessage)
+        private void MultiplayerOptionBox()
         {
-            try
+            string multiplayerOptionMessage = string.Empty;
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                bool _tProgressTime = ProgressTime;
-                ProgressTime = GUILayout.Toggle(TimeOfDayIsDaytime, $"Stop the time?", GUI.skin.toggle);
-                if (_tProgressTime != ProgressTime)
+                GUI.color = Color.green;
+                if (IsModActiveForSingleplayer)
                 {
-                    ShowHUDBigInfo(HUDBigInfoMessage(progressTimeMessage, MessageType.Info, Color.green));
-                    if (ProgressTime)
-                    {
-                        MainLevel.Instance.StopDayTimeProgress();
-                    }
-                    else
-                    {
-                        MainLevel.Instance.StartDayTimeProgress();
-                    }
+                    multiplayerOptionMessage = $"you are the game host";
                 }
+                if (IsModActiveForMultiplayer)
+                {
+                    multiplayerOptionMessage = $"the game host allowed usage";
+                }
+                GUILayout.Toggle(true, PermissionChangedMessage($"granted", multiplayerOptionMessage), GUI.skin.toggle);
             }
-            catch (Exception exc)
+            else
             {
-                HandleException(exc, nameof(ProgressTimeOptionBox));
+                GUI.color = Color.yellow;
+                if (!IsModActiveForSingleplayer)
+                {
+                    multiplayerOptionMessage = $"you are not the game host";
+                }
+                if (!IsModActiveForMultiplayer)
+                {
+                    multiplayerOptionMessage = $"the game host did not allow usage";
+                }
+                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", multiplayerOptionMessage), GUI.skin.toggle);
             }
         }
 
-        private void TimeOfDateTimeOptionBox(string timeOfDayMessage)
+        private void RainOptionBox()
         {
-            try
-            {
-                bool _tTimeOfDayIsDaytime = TimeOfDayIsDaytime;
-                TimeOfDayIsDaytime = GUILayout.Toggle(TimeOfDayIsDaytime, $"Change the time of day?", GUI.skin.toggle);
-                if (_tTimeOfDayIsDaytime != TimeOfDayIsDaytime)
-                {
-                    ShowHUDBigInfo(HUDBigInfoMessage(timeOfDayMessage, MessageType.Info, Color.green));
-                    if (TimeOfDayIsDaytime)
-                    {
-                        MainLevel.Instance.SetDayTime(5, 1);
-                    }
-                    else
-                    {
-                        MainLevel.Instance.SetDayTime(23, 1);
-                    }
-                }
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(TimeOfDateTimeOptionBox));
-            }
-        }
-
-        private void RainOptionBox(string rainOptionMessage)
-        {
+            string rainOptionMessage = string.Empty;
             try
             {
                 bool _tRainEnabled = RainEnabled;
                 RainEnabled = GUILayout.Toggle(RainEnabled, $"Change the weather?", GUI.skin.toggle);
                 if (_tRainEnabled != RainEnabled)
                 {
-                    ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
                     if (RainEnabled)
                     {
                         LocalRainManager.ScenarioStartRain();
@@ -378,10 +351,12 @@ namespace ModTime
                     }
                     MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(RainEnabled);
                 }
+                rainOptionMessage = $"Rain { (RainEnabled ? "is falling" : "has stopped") }";
+                ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(TimeOfDateTimeOptionBox));
+                HandleException(exc, nameof(RainOptionBox));
             }
         }
 
@@ -394,55 +369,22 @@ namespace ModTime
             }
         }
 
-        private void MultiplayerOptionBox()
+        private void TimeOfDayBox()
         {
-            string reason = string.Empty;
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                GUI.color = Color.green;
-                if (IsModActiveForSingleplayer)
+                using (var timeofdayBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    reason = "you are the game host";
-                }
-                if (IsModActiveForMultiplayer)
-                {
-                    reason = "the game host allowed usage";
-                }
-                GUILayout.Toggle(true, PermissionChangedMessage($"granted", $"{reason}"), GUI.skin.toggle);
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                if (!IsModActiveForSingleplayer)
-                {
-                    reason = "you are not the game host";
-                }
-                if (!IsModActiveForMultiplayer)
-                {
-                    reason = "the game host did not allow usage";
-                }
-                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{reason}"), GUI.skin.toggle);
-            }
-        }
+                    GUI.color = Color.cyan;
+                    GUILayout.Label(GetWatchTimeData(), GUI.skin.label);
 
-        private void TimeOfDateTimeBox()
-        {
-            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
-            {
-                using (new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUILayout.Label("Change the date. Then click [Set datetime]", GUI.skin.label);
-                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    GUI.color = DefaultGuiColor;
+                    GUILayout.Label("To fast forward time in-game to the next daytime cycle, click [FFW >>]", GUI.skin.label);
+                    using (var timeofdayScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Day: ", GUI.skin.label);
-                        InGameDay = GUILayout.TextField(InGameDay, GUI.skin.textField);
-                        GUILayout.Label("Month: ", GUI.skin.label);
-                        InGameMonth = GUILayout.TextField(InGameMonth, GUI.skin.textField);
-                        GUILayout.Label("Year: ", GUI.skin.label);
-                        InGameYear = GUILayout.TextField(InGameYear, GUI.skin.textField);
-                        if (GUILayout.Button("Set datetime", GUI.skin.button, GUILayout.MaxWidth(200f)))
+                        if (GUILayout.Button("FFW >>", GUI.skin.button, GUILayout.MaxWidth(200f)))
                         {
-                            OnClickSetTimeOfDateTimeButton();
+                            OnClickFastForwardDayCycleButton();
                         }
                     }
                 }
@@ -451,6 +393,69 @@ namespace ModTime
             {
                 OnlyForSingleplayerOrWhenHostBox();
             }
+        }
+
+        private void InitTimeData()
+        {
+            WatchTimeData watchTimeData = new WatchTimeData
+            {
+                m_Parent = LocalWatch.m_Canvas.transform.Find("Time").gameObject
+            };
+            watchTimeData.m_TimeHourDec = watchTimeData.m_Parent.transform.Find("HourDec").GetComponent<Text>();
+            watchTimeData.m_TimeHourUnit = watchTimeData.m_Parent.transform.Find("HourUnit").GetComponent<Text>();
+            watchTimeData.m_TimeMinuteDec = watchTimeData.m_Parent.transform.Find("MinuteDec").GetComponent<Text>();
+            watchTimeData.m_TimeMinuteUnit = watchTimeData.m_Parent.transform.Find("MinuteUnit").GetComponent<Text>();
+            watchTimeData.m_DayDec = watchTimeData.m_Parent.transform.Find("DayDec").GetComponent<Text>();
+            watchTimeData.m_DayUnit = watchTimeData.m_Parent.transform.Find("DayUnit").GetComponent<Text>();
+            watchTimeData.m_DayName = watchTimeData.m_Parent.transform.Find("DayName").GetComponent<Text>();
+            watchTimeData.m_MonthName = watchTimeData.m_Parent.transform.Find("MonthName").GetComponent<Text>();
+            watchTimeData.m_Parent.SetActive(value: false);
+            LocalWatchData.Add(0, watchTimeData);
+        }
+
+
+        private string GetWatchTimeData()
+        {
+            string watchTimeData = string.Empty;
+            try
+            {
+                WatchTimeData data = (WatchTimeData)LocalWatchData[0];
+                if (data != null)
+                {
+                    watchTimeData = $"Time is {data.m_TimeHourDec.text}{data.m_TimeHourUnit.text} : {data.m_TimeMinuteDec.text}{data.m_TimeMinuteUnit.text} "
+                                                    + GetWatchTimeDayOfMonth(data);
+                }
+                return watchTimeData;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetWatchTimeData));
+                return string.Empty;
+            }
+        }
+
+        private string GetWatchTimeDayOfMonth(WatchTimeData data)
+        {
+            int dayDecimal = Convert.ToInt32(data.m_DayDec.text);
+            int dayUnit = Convert.ToInt32(data.m_DayUnit.text);
+            string daySuffix;
+            switch (dayUnit)
+            {
+                case 1:
+                    daySuffix = "st";
+                    break;
+                case 2:
+                    daySuffix = "nd";
+                    break;
+                case 3:
+                    daySuffix = "rd";
+                    break;
+                default:
+                    daySuffix = "th";
+                    break;
+            }
+
+            return $"on {data.m_DayName.text},the {dayDecimal}{dayUnit} {daySuffix} of {data.m_MonthName.text}";
         }
 
         private void TimeScalesBox()
@@ -496,20 +501,34 @@ namespace ModTime
             }
         }
 
-        private void OnClickSetTimeOfDateTimeButton()
+        private void OnClickFastForwardDayCycleButton()
         {
             try
             {
-                DateTime dateTime = ValidateDay(InGameDay, InGameMonth, InGameYear);
+                TOD_Sky sky = MainLevel.Instance.m_TODSky;
+                DateTime dateTime = sky.Cycle.DateTime;
                 if (dateTime != DateTime.MinValue)
                 {
-                    MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
-                    ShowHUDBigInfo(HUDBigInfoMessage(DayTimeSetMessage(InGameDay, InGameMonth, InGameYear), MessageType.Info, Color.green));
+                    string daytime = string.Empty ;
+                    if ( sky.IsNight)
+                    {
+                        dateTime = dateTime.AddDays(1);
+                        MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
+                        MainLevel.Instance.SetDayTime(5, 1);
+                        daytime = nameof(sky.Day);
+                    }
+                    else
+                    {
+                        MainLevel.Instance.SetDayTime(22, 1);
+                        daytime = nameof(sky.Night);
+                    }
+
+                    ShowHUDBigInfo(HUDBigInfoMessage(DayTimeSetMessage(daytime), MessageType.Info, Color.green));
                 }
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(OnClickSetTimeOfDateTimeButton));
+                HandleException(exc, nameof(OnClickFastForwardDayCycleButton));
             }
         }
 
