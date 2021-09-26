@@ -327,13 +327,13 @@ namespace ModTime
                     {
                         ModStatusOptionBox();
                     }
-                    GUILayout.Label($"Options for weather and time", GUI.skin.label);
-                    using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        TimeOptionBox();
-                        WeatherOptionBox();
-                        DaytimeOptionBox();
-                    }
+                    //GUILayout.Label($"Options for weather and time", GUI.skin.label);
+                    //using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    //{
+                    //    TimeOptionBox();
+                    //    WeatherOptionBox();
+                    //    DaytimeOptionBox();
+                    //}
                 }
             }
             else
