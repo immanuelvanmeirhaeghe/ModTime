@@ -27,8 +27,8 @@ namespace ModTime
         private static readonly string DefaultNightTimeScale = "10";
 
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
-        private static bool IsScreenMinimized { get; set; } = false;
-        private static bool ShowScreen { get; set; } = false;
+        private static bool IsMinimized { get; set; } = false;
+        private bool ShowUI { get; set; } = false;
         private static float StartPositionX { get; set; } = Screen.width / 4f;
         private static float StartPositionY { get; set; } = Screen.height / 4f;
 
@@ -40,7 +40,7 @@ namespace ModTime
         private static HUDManager LocalHUDManager;
         private static CursorManager LocalCursorManager;
 
-        public bool IsModActiveForMultiplayer { get; private set; }
+        public bool IsModActiveForMultiplayer { get; private set; } = false;
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
         public static Rect ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
@@ -50,9 +50,10 @@ namespace ModTime
         public static string InGameMonth { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Month.ToString();
         public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Year.ToString();
         public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
-        public bool IsProgressTimeEnabled { get; private set; } = true;
-        public bool IsRainEnabled { get; private set; } = false;
-        public bool IsDayTimeEnabled { get; private set; } = true;
+
+        public bool ProgressTimeOption { get; private set; } = true;
+        public bool WeatherOption { get; private set; } = false;
+        public bool DaytimeOption { get; private set; } = true;
 
         public ModTime()
         {
@@ -193,13 +194,13 @@ namespace ModTime
         {
             if (Input.GetKeyDown(ModKeybindingId))
             {
-                if (!ShowScreen)
+                if (!ShowUI)
                 {
                     InitData();
                     EnableCursor(true);
                 }
                 ToggleShowUI();
-                if (!ShowScreen)
+                if (!ShowUI)
                 {
                     EnableCursor(false);
                 }
@@ -208,12 +209,12 @@ namespace ModTime
 
         private void ToggleShowUI()
         {
-            ShowScreen = !ShowScreen;
+            ShowUI = !ShowUI;
         }
 
         private void OnGUI()
         {
-            if (ShowScreen)
+            if (ShowUI)
             {
                 InitData();
                 InitSkinUI();
@@ -262,22 +263,22 @@ namespace ModTime
 
         private void CollapseWindow()
         {
-            if (!IsScreenMinimized)
+            if (!IsMinimized)
             {
                 ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, MinHeight);
-                IsScreenMinimized = true;
+                IsMinimized = true;
             }
             else
             {
                 ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
-                IsScreenMinimized = false;
+                IsMinimized = false;
             }
             InitWindow();
         }
 
         private void CloseWindow()
         {
-            ShowScreen = false;
+            ShowUI = false;
             EnableCursor(false);
         }
 
@@ -289,7 +290,7 @@ namespace ModTime
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ScreenMenuBox();
-                if (!IsScreenMinimized)
+                if (!IsMinimized)
                 {
                     ModOptionsBox();
                     TimeScalesBox();
@@ -306,17 +307,18 @@ namespace ModTime
                 GUI.color = DefaultGuiColor;
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To show or hide this screen, toggle press [{ModKeybindingId}]", GUI.skin.label);
+                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
                     GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    using (var playerOptionsScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
-                        StatusOptionBox();
+                        ModStatusOptionBox();
                     }
                     GUILayout.Label($"Options for weather and time", GUI.skin.label);
                     using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
                         TimeOptionBox();
                         WeatherOptionBox();
+                        DaytimeOptionBox();
                     }
                 }
             }
@@ -326,40 +328,64 @@ namespace ModTime
             }
         }
 
-        private void StatusOptionBox()
+        private void ModStatusOptionBox()
         {
-            bool _singleplayerOption = IsModActiveForSingleplayer;
-            bool _multiplayerOption = IsModActiveForMultiplayer;
-            bool _statusOption = _singleplayerOption || _multiplayerOption;
-            string _statusOptionText = StatusForMultiplayer(_singleplayerOption, _multiplayerOption);
-            string _statusText = _statusOption ?"granted" :"revoked";
-            GUILayout.Label( PermissionChangedMessage(_statusText, _statusOptionText), GUI.skin.toggle);
+            string reason = string.Empty;
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                GUI.color = Color.green;
+                if (IsModActiveForSingleplayer)
+                {
+                    reason = "you are the game host";
+                }
+                if (IsModActiveForMultiplayer)
+                {
+                    reason = "the game host allowed usage";
+                }
+                GUILayout.Toggle(true, PermissionChangedMessage($"granted", $"{reason}"), GUI.skin.toggle);
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                if (!IsModActiveForSingleplayer)
+                {
+                    reason = "you are not the game host";
+                }
+                if (!IsModActiveForMultiplayer)
+                {
+                    reason = "the game host did not allow usage";
+                }
+                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{reason}"), GUI.skin.toggle);
+            }
         }
 
         private void WeatherOptionBox()
         {
-            bool _rainOption = IsRainEnabled;
-            string _rainOptionText = RainStatusChanged(_rainOption);
-            IsRainEnabled = GUILayout.Toggle(IsRainEnabled, _rainOptionText, GUI.skin.toggle);
-            ToggleWeather(_rainOption);
+            bool _rainOption = WeatherOption;
+            string _rainOptionText = $"Is it raining?";    // RainStatusChanged(_rainOption);
+            WeatherOption = GUILayout.Toggle(WeatherOption, _rainOptionText, GUI.skin.toggle);
+            ToggleWeather(_rainOption, WeatherOption);
         }
 
         private void TimeOptionBox()
         {
-            bool _timeOption = IsProgressTimeEnabled;
-            string _timeOptionText = ProgressTimeStatusChanged(_timeOption);
-            IsProgressTimeEnabled = GUILayout.Toggle(IsProgressTimeEnabled, _timeOptionText, GUI.skin.toggle);
-            ToggleProgressTime(_timeOption);
-
-            bool _daytimeOption = IsDayTimeEnabled;
-            string _daytimeOptionText = DayTimeChanged(_daytimeOption);
-            IsDayTimeEnabled = GUILayout.Toggle(IsDayTimeEnabled, _daytimeOptionText, GUI.skin.toggle);
-            ToggleDayTime(_daytimeOption);
+            bool _timeOption = ProgressTimeOption;
+            string _timeOptionText = $"Progress or stop time? ";    //ProgressTimeStatusChanged(_timeOption);
+            ProgressTimeOption = GUILayout.Toggle(ProgressTimeOption, _timeOptionText, GUI.skin.toggle);
+            ToggleProgressTime(_timeOption, ProgressTimeOption);
         }
 
-        public void ToggleWeather(bool isEnabled)
+        private void DaytimeOptionBox()
         {
-            if (isEnabled)
+            bool _daytimeOption = DaytimeOption;
+            string _daytimeOptionText = $"Is it daytime or night?";    // DayTimeChanged(_daytimeOption);
+            DaytimeOption = GUILayout.Toggle(DaytimeOption, _daytimeOptionText, GUI.skin.toggle);
+            ToggleDayTime(_daytimeOption, DaytimeOption);
+        }
+
+        public void ToggleWeather(bool optionValue, bool toggled)
+        {
+            if (optionValue != toggled)
             {
                 RainManager.Get().ScenarioStartRain();
             }
@@ -367,6 +393,25 @@ namespace ModTime
             {
                 RainManager.Get().ScenarioStopRain();
             }
+        }
+
+        public static string ProgressTimeStatusChanged(bool isEnabled)
+        {
+            string msg;
+            if (isEnabled)
+            {
+                GUI.color = Color.green;
+                msg = $"Time is running. ";
+            }
+            else
+            {
+                GUI.color = Color.yellow;
+                msg = $"Time has stopped. ";
+            }
+            GUI.color = DefaultGuiColor;
+            msg += $"Click to change time progress.";
+
+            return msg;
         }
 
         private static string RainStatusChanged(bool isEnabled)
@@ -506,9 +551,9 @@ namespace ModTime
             }
         }
 
-        public void ToggleProgressTime(bool isEnabled)
+        public void ToggleProgressTime(bool optionValue, bool toggled)
         {
-            if (isEnabled != IsProgressTimeEnabled)
+            if (optionValue != toggled)
             {
                 MainLevel.Instance.StartDayTimeProgress();
             }
@@ -518,9 +563,9 @@ namespace ModTime
             }
         }
 
-        public void ToggleDayTime(bool isEnabled)
+        public void ToggleDayTime(bool optionValue, bool toggled)
         {
-            if (isEnabled != IsDayTimeEnabled && !IsNight())
+            if (optionValue != toggled && !IsNight())
             {
                 MainLevel.Instance.SetDayTime(5,0);
             }
@@ -528,25 +573,6 @@ namespace ModTime
             {
                 MainLevel.Instance.SetDayTime(22,0);
             }
-        }
-
-        public static string ProgressTimeStatusChanged(bool isEnabled)
-        {
-            string msg;
-            if (isEnabled)
-            {
-                GUI.color = Color.green;
-                msg = $"Time is running. ";
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                msg = $"Time has stopped. ";
-            }
-            GUI.color = DefaultGuiColor;
-            msg += $"Click to change time progress.";
-
-            return msg;
         }
 
         private void OnClickSetTimeScalesButton()
