@@ -31,8 +31,8 @@ namespace ModTime
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
         private static bool IsScreenMinimized { get; set; } = false;
         private static bool ShowScreen { get; set; } = false;
-        private static float PositionX { get; set; } = ModTimeScreen.x;
-        private static float PositionY { get; set; } = ModTimeScreen.y;
+        private static float PositionX { get; set; } = 0f;
+        private static float PositionY { get; set; } = 0f;
 
         private Dictionary<int, WatchData> WatchDataDictionary = new Dictionary<int, WatchData>();
 
@@ -307,22 +307,25 @@ namespace ModTime
                 {
                     GUILayout.Label($"To show or hide this screen, toggle press [{ModKeybindingId}]", GUI.skin.label);
                     GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    using (var modScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                    {
-                        StatusForMultiplayer();
-                    }
+                    StatusOptionBox();
                     GUILayout.Label($"Options for weather and time", GUI.skin.label);
-                    using (var weathertimeScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        TimeOptionBox();
-                        WeatherOptionBox();
-                    }
+                    TimeOptionBox();
+                    WeatherOptionBox();
                 }
             }
             else
             {
                 OnlyForSingleplayerOrWhenHostBox();
             }
+        }
+
+        private void StatusOptionBox()
+        {
+            bool _singleplayerOption = IsModActiveForSingleplayer;
+            bool _multiplayerOption = IsModActiveForMultiplayer;
+            bool _statusOption = _singleplayerOption || _multiplayerOption;
+            string _statusoptionText = StatusForMultiplayer(_singleplayerOption, _multiplayerOption);
+            _ = GUILayout.Toggle(_statusOption, PermissionChangedMessage($"granted", $"{_statusoptionText}"), GUI.skin.toggle);
         }
 
         private void WeatherOptionBox()
@@ -405,35 +408,34 @@ namespace ModTime
             }
         }
 
-        private void StatusForMultiplayer()
+        private string StatusForMultiplayer(bool singleplayerEnabled, bool multiplayerEnabled)
         {
             string reason = string.Empty;
-            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            if (singleplayerEnabled || multiplayerEnabled)
             {
                 GUI.color = Color.cyan;
-                if (IsModActiveForSingleplayer)
+                if (singleplayerEnabled)
                 {
                     reason = "you are the game host";
                 }
-                if (IsModActiveForMultiplayer)
+                if (multiplayerEnabled)
                 {
                     reason = "the game host allowed usage";
                 }
-                GUILayout.Toggle(true, PermissionChangedMessage($"granted", $"{reason}"), GUI.skin.toggle);
             }
             else
             {
                 GUI.color = Color.yellow;
-                if (!IsModActiveForSingleplayer)
+                if (!singleplayerEnabled)
                 {
                     reason = "you are not the game host";
                 }
-                if (!IsModActiveForMultiplayer)
+                if (!multiplayerEnabled)
                 {
                     reason = "the game host did not allow usage";
                 }
-                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{reason}"), GUI.skin.toggle);
             }
+            return reason;
         }
 
         private void DateTimeCycleBox()
