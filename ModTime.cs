@@ -17,33 +17,50 @@ namespace ModTime
     {
         private static readonly string ModName = nameof(ModTime);
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static readonly float ModScreenMinWidth = 450f;
+
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenMaxWidth = 550f;
-        private static readonly float ModScreenMinHeight = 50f;
+
         private static readonly float ModScreenTotalHeight = 150f;
+
+        private static readonly float ModScreenMinWidth = 450f;
+
+        private static readonly float ModScreenMaxWidth = 550f;
+
+        private static readonly float ModScreenMinHeight = 50f;
+
         private static readonly float ModScreenMaxHeight = 200f;
+
         private static readonly string DefaultDayTimeScale = "20";
+
         private static readonly string DefaultNightTimeScale = "10";
 
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
+
+        private static float ModScreenStartPositionX { get; set; } = (Screen.width - ModScreenMaxWidth) % ModScreenTotalWidth;
+
+
+        private static float ModScreenStartPositionY { get; set; } = (Screen.height - ModScreenMaxHeight) % ModScreenTotalHeight;
+
+
         private static bool IsMinimized { get; set; } = false;
-        private bool ShowUI { get; set; } = false;
-        private static float ModScreenStartPositionX { get; set; } = Screen.width / 4f;
-        private static float ModScreenStartPositionY { get; set; } = Screen.height / 4f;
+
+        private bool ShowModUI;
+
+        public bool IsModActiveForMultiplayer { get; private set; }
+
+        public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
         private Dictionary<int, WatchData> WatchDataDictionary = new Dictionary<int, WatchData>();
 
-        private static Color DefaultGuiColor = GUI.color;
+        private static Color DefaultGuiColor;
         private static ModTime Instance;
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
         private static CursorManager LocalCursorManager;
-
-        public bool IsModActiveForMultiplayer { get; private set; } = false;
-        public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
+        private static Watch LocalWatch;
 
         public static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+
         public static string DayTimeScaleInMinutes { get; set; } = DefaultDayTimeScale;
         public static string NightTimeScaleInMinutes { get; set; } = DefaultNightTimeScale;
         public static string InGameDay { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Day.ToString();
@@ -54,6 +71,7 @@ namespace ModTime
         public static bool IsTimeProgressing { get; set; } = true;
         public static bool IsRaining { get; set; } = false;
         public static bool IsDaytime { get; set; } = true;
+
 
         public ModTime()
         {
@@ -208,13 +226,13 @@ namespace ModTime
         {
             if (Input.GetKeyDown(ModKeybindingId))
             {
-                if (!ShowUI)
+                if (!ShowModUI)
                 {
                     InitData();
                     EnableCursor(true);
                 }
                 ToggleShowUI();
-                if (!ShowUI)
+                if (!ShowModUI)
                 {
                     EnableCursor(false);
                 }
@@ -223,14 +241,15 @@ namespace ModTime
 
         private void ToggleShowUI()
         {
-            ShowUI = !ShowUI;
+            ShowModUI = !ShowModUI;
         }
 
         private void OnGUI()
         {
-            if (ShowUI)
+            if (ShowModUI)
             {
                 InitData();
+                InitTimeData();
                 InitSkinUI();
                 InitWindow();
             }
@@ -241,11 +260,13 @@ namespace ModTime
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
             LocalCursorManager = CursorManager.Get();
+            LocalWatch = Watch.Get();
         }
 
         private void InitSkinUI()
         {
             GUI.skin = ModAPI.Interface.Skin;
+            DefaultGuiColor = GUI.color;
         }
 
         private void InitWindow()
@@ -292,7 +313,7 @@ namespace ModTime
 
         private void CloseWindow()
         {
-            ShowUI = false;
+            ShowModUI = false;
             EnableCursor(false);
         }
 
@@ -306,8 +327,8 @@ namespace ModTime
                 ScreenMenuBox();
                 if (!IsMinimized)
                 {
-                    ModOptionsBox();
-                   // TimeScalesBox();
+                    //ModOptionsBox();
+                    TimeScalesBox();
                     DateTimeCycleBox();
                 }
             }
@@ -322,8 +343,8 @@ namespace ModTime
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
-                    GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    ModStatusOptionBox();
+                    //GUILayout.Label($"Options for multiplayer", GUI.skin.label);
+                    //ModStatusOptionBox();
                     GUILayout.Label($"Options for weather and time", GUI.skin.label);
                     TimeOptionBox();
                     WeatherOptionBox();
@@ -336,36 +357,36 @@ namespace ModTime
             }
         }
 
-        private void ModStatusOptionBox()
-        {
-            string reason = string.Empty;
-            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
-            {
-                GUI.color = Color.green;
-                if (IsModActiveForSingleplayer)
-                {
-                    reason = "you are the game host";
-                }
-                if (IsModActiveForMultiplayer)
-                {
-                    reason = "the game host allowed usage";
-                }
-                GUILayout.Toggle(true, PermissionChangedMessage($"granted", reason), GUI.skin.toggle);
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                if (!IsModActiveForSingleplayer)
-                {
-                    reason = "you are not the game host";
-                }
-                if (!IsModActiveForMultiplayer)
-                {
-                    reason = "the game host did not allow usage";
-                }
-                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", reason), GUI.skin.toggle);
-            }
-        }
+        //private void ModStatusOptionBox()
+        //{
+        //    string reason = string.Empty;
+        //    if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+        //    {
+        //        GUI.color = Color.green;
+        //        if (IsModActiveForSingleplayer)
+        //        {
+        //            reason = "you are the game host";
+        //        }
+        //        if (IsModActiveForMultiplayer)
+        //        {
+        //            reason = "the game host allowed usage";
+        //        }
+        //        GUILayout.Toggle(true, PermissionChangedMessage($"granted", reason), GUI.skin.toggle);
+        //    }
+        //    else
+        //    {
+        //        GUI.color = Color.yellow;
+        //        if (!IsModActiveForSingleplayer)
+        //        {
+        //            reason = "you are not the game host";
+        //        }
+        //        if (!IsModActiveForMultiplayer)
+        //        {
+        //            reason = "the game host did not allow usage";
+        //        }
+        //        GUILayout.Toggle(false, PermissionChangedMessage($"revoked", reason), GUI.skin.toggle);
+        //    }
+        //}
 
         private void TimeOptionBox()
         {
@@ -380,7 +401,7 @@ namespace ModTime
             bool _rainOptionState = IsRaining;
             string _rainOptionText = $"Is it raining?";
             IsRaining = GUILayout.Toggle(IsRaining, _rainOptionText, GUI.skin.toggle);
-           // ToggleWeather(_rainOptionState);
+            // ToggleWeather(_rainOptionState);
         }
 
         private void DaytimeOptionBox()
@@ -406,8 +427,8 @@ namespace ModTime
             {
                 using (var daytimeScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUI.color = Color.cyan;
-                    GUILayout.Label(GetWatchData(), GUI.skin.label);
+                    //GUI.color = Color.cyan;
+                    //GUILayout.Label(GetWatchData(), GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label("Change the date (day / month / year) and time in game. Then click [Change datetime]", GUI.skin.label);
@@ -421,7 +442,7 @@ namespace ModTime
                         InGameYear = GUILayout.TextField(InGameYear, GUI.skin.textField);
                         GUILayout.Label("Time: ", GUI.skin.label);
                         InGameTime = GUILayout.TextField(InGameTime, GUI.skin.textField);
-                        if (GUILayout.Button("Change datetime", GUI.skin.button, GUILayout.Width(150f)))
+                        if (GUILayout.Button("Change datetime", GUI.skin.button, GUILayout.MaxWidth(200f)))
                         {
                             OnClickSetDayTimeButton();
                         }
@@ -448,7 +469,7 @@ namespace ModTime
                         GUILayout.Label("Nighttime:  ", GUI.skin.label);
                         NightTimeScaleInMinutes = GUILayout.TextField(NightTimeScaleInMinutes, GUI.skin.textField);
                     }
-                    if (GUILayout.Button("Set time scales", GUI.skin.button))
+                    if (GUILayout.Button("Set time scales", GUI.skin.button, GUILayout.MaxWidth(200f)))
                     {
                         OnClickSetTimeScalesButton();
                     }
@@ -628,7 +649,7 @@ namespace ModTime
         private void InitTimeData()
         {
             WatchTimeData watchTimeData = new WatchTimeData();
-            watchTimeData.m_Parent = Watch.Get().m_Canvas.transform.Find("Time").gameObject;
+            watchTimeData.m_Parent = LocalWatch.m_Canvas.transform.Find("Time").gameObject;
             watchTimeData.m_TimeHourDec = watchTimeData.m_Parent.transform.Find("HourDec").GetComponent<Text>();
             watchTimeData.m_TimeHourUnit = watchTimeData.m_Parent.transform.Find("HourUnit").GetComponent<Text>();
             watchTimeData.m_TimeMinuteDec = watchTimeData.m_Parent.transform.Find("MinuteDec").GetComponent<Text>();
