@@ -17,20 +17,20 @@ namespace ModTime
     {
         private static readonly string ModName = nameof(ModTime);
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static readonly float MinWidth = 450f;
-        private static readonly float TotalWidth = 500f;
-        private static readonly float MaxWidth = 550f;
-        private static readonly float MinHeight = 50f;
-        private static readonly float TotalHeight = 150f;
-        private static readonly float MaxHeight = 200f;
+        private static readonly float ModScreenMinWidth = 450f;
+        private static readonly float ModScreenTotalWidth = 500f;
+        private static readonly float ModScreenMaxWidth = 550f;
+        private static readonly float ModScreenMinHeight = 50f;
+        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenMaxHeight = 200f;
         private static readonly string DefaultDayTimeScale = "20";
         private static readonly string DefaultNightTimeScale = "10";
 
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
         private static bool IsMinimized { get; set; } = false;
         private bool ShowUI { get; set; } = false;
-        private static float StartPositionX { get; set; } = Screen.width / 4f;
-        private static float StartPositionY { get; set; } = Screen.height / 4f;
+        private static float ModScreenStartPositionX { get; set; } = Screen.width / 4f;
+        private static float ModScreenStartPositionY { get; set; } = Screen.height / 4f;
 
         private Dictionary<int, WatchData> WatchDataDictionary = new Dictionary<int, WatchData>();
 
@@ -43,7 +43,7 @@ namespace ModTime
         public bool IsModActiveForMultiplayer { get; private set; } = false;
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
 
-        public static Rect ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
+        public static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         public static string DayTimeScaleInMinutes { get; set; } = DefaultDayTimeScale;
         public static string NightTimeScaleInMinutes { get; set; } = DefaultNightTimeScale;
         public static string InGameDay { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Day.ToString();
@@ -254,11 +254,11 @@ namespace ModTime
             ModTimeScreen = GUILayout.Window(wid, ModTimeScreen, InitModTimeScreen, ModName,
                                                                                     GUI.skin.window,
                                                                                     GUILayout.ExpandWidth(true),
-                                                                                    GUILayout.MinWidth(MinWidth),
-                                                                                    GUILayout.MaxWidth(MaxWidth),
+                                                                                    GUILayout.MinWidth(ModScreenMinWidth),
+                                                                                    GUILayout.MaxWidth(ModScreenMaxWidth),
                                                                                     GUILayout.ExpandHeight(true),
-                                                                                    GUILayout.MinHeight(MinHeight),
-                                                                                    GUILayout.MaxHeight(MaxHeight)
+                                                                                    GUILayout.MinHeight(ModScreenMinHeight),
+                                                                                    GUILayout.MaxHeight(ModScreenMaxHeight)
                                                                                     );
         }
 
@@ -279,12 +279,12 @@ namespace ModTime
         {
             if (!IsMinimized)
             {
-                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, MinHeight);
+                ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
                 IsMinimized = true;
             }
             else
             {
-                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
+                ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
                 IsMinimized = false;
             }
             InitWindow();
@@ -298,16 +298,16 @@ namespace ModTime
 
         private void InitModTimeScreen(int windowID)
         {
-            StartPositionX = ModTimeScreen.x;
-            StartPositionY = ModTimeScreen.y;
+            ModScreenStartPositionX = ModTimeScreen.x;
+            ModScreenStartPositionY = ModTimeScreen.y;
 
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ScreenMenuBox();
                 if (!IsMinimized)
                 {
-                   // ModOptionsBox();
-                    TimeScalesBox();
+                    ModOptionsBox();
+                   // TimeScalesBox();
                     DateTimeCycleBox();
                 }
             }
@@ -323,17 +323,11 @@ namespace ModTime
                 {
                     GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
                     GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        ModStatusOptionBox();
-                    }
+                    ModStatusOptionBox();
                     GUILayout.Label($"Options for weather and time", GUI.skin.label);
-                    using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        TimeOptionBox();
-                        WeatherOptionBox();
-                        DaytimeOptionBox();
-                    }
+                    TimeOptionBox();
+                    WeatherOptionBox();
+                    DaytimeOptionBox();
                 }
             }
             else
