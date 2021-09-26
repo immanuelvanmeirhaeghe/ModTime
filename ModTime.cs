@@ -306,7 +306,7 @@ namespace ModTime
                 ScreenMenuBox();
                 if (!IsMinimized)
                 {
-                    ModOptionsBox();
+                   // ModOptionsBox();
                     TimeScalesBox();
                     DateTimeCycleBox();
                 }
@@ -321,12 +321,12 @@ namespace ModTime
                 GUI.color = DefaultGuiColor;
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    //GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
-                    //GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    //using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    //{
-                    //    ModStatusOptionBox();
-                    //}
+                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
+                    GUILayout.Label($"Options for multiplayer", GUI.skin.label);
+                    using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        ModStatusOptionBox();
+                    }
                     GUILayout.Label($"Options for weather and time", GUI.skin.label);
                     using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
@@ -378,7 +378,7 @@ namespace ModTime
             bool _timeOption = IsTimeProgressing;
             string _timeOptionText = $"Progress or stop time? ";
             IsTimeProgressing = GUILayout.Toggle(IsTimeProgressing, _timeOptionText, GUI.skin.toggle);
-            ToggleProgressTime(_timeOption);
+            //ToggleProgressTime(_timeOption);
         }
 
         private void WeatherOptionBox()
@@ -386,7 +386,7 @@ namespace ModTime
             bool _rainOptionState = IsRaining;
             string _rainOptionText = $"Is it raining?";
             IsRaining = GUILayout.Toggle(IsRaining, _rainOptionText, GUI.skin.toggle);
-            ToggleWeather(_rainOptionState);
+           // ToggleWeather(_rainOptionState);
         }
 
         private void DaytimeOptionBox()
@@ -394,7 +394,7 @@ namespace ModTime
             bool _daytimeOption = IsDaytime;
             string _daytimeOptionText = $"Is it daytime or night?";
             IsDaytime = GUILayout.Toggle(IsDaytime, _daytimeOptionText, GUI.skin.toggle);
-            ToggleDaytime(_daytimeOption);
+            //ToggleDaytime(_daytimeOption);
         }
 
         private void OnlyForSingleplayerOrWhenHostBox()
