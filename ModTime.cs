@@ -29,8 +29,6 @@ namespace ModTime
         private static KeyCode ModKeybindingId { get; set; } = KeyCode.Minus;
         private static bool IsScreenMinimized { get; set; } = false;
         private static bool ShowScreen { get; set; } = false;
-        private static float PositionX { get; set; } = 0f;
-        private static float PositionY { get; set; } = 0f;
         private static float StartPositionX { get; set; } = Screen.width / 4f;
         private static float StartPositionY { get; set; } = Screen.height / 4f;
 
@@ -54,7 +52,7 @@ namespace ModTime
         public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
         public bool IsProgressTimeEnabled { get; private set; } = true;
         public bool IsRainEnabled { get; private set; } = false;
-        public bool IsDayTimeEnabled { get; private set; }
+        public bool IsDayTimeEnabled { get; private set; } = true;
 
         public ModTime()
         {
@@ -266,12 +264,12 @@ namespace ModTime
         {
             if (!IsScreenMinimized)
             {
-                ModTimeScreen = new Rect(PositionX, PositionY, TotalWidth, MinHeight);
+                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, MinHeight);
                 IsScreenMinimized = true;
             }
             else
             {
-                ModTimeScreen = new Rect(PositionX, PositionY, TotalWidth, TotalHeight);
+                ModTimeScreen = new Rect(StartPositionX, StartPositionY, TotalWidth, TotalHeight);
                 IsScreenMinimized = false;
             }
             InitWindow();
@@ -285,8 +283,8 @@ namespace ModTime
 
         private void InitModTimeScreen(int windowID)
         {
-            PositionX = ModTimeScreen.x;
-            PositionY = ModTimeScreen.y;
+            StartPositionX = ModTimeScreen.x;
+            StartPositionY = ModTimeScreen.y;
 
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
@@ -310,7 +308,7 @@ namespace ModTime
                 {
                     GUILayout.Label($"To show or hide this screen, toggle press [{ModKeybindingId}]", GUI.skin.label);
                     GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    using (var playerOptionsrScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    using (var playerOptionsScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         StatusOptionBox();
                     }
@@ -333,9 +331,9 @@ namespace ModTime
             bool _singleplayerOption = IsModActiveForSingleplayer;
             bool _multiplayerOption = IsModActiveForMultiplayer;
             bool _statusOption = _singleplayerOption || _multiplayerOption;
-            string _statusoptionText = StatusForMultiplayer(_singleplayerOption, _multiplayerOption);
+            string _statusOptionText = StatusForMultiplayer(_singleplayerOption, _multiplayerOption);
             string _statusText = _statusOption ?"granted" :"revoked";
-            GUILayout.Label( PermissionChangedMessage(_statusText, _statusoptionText), GUI.skin.toggle);
+            GUILayout.Label( PermissionChangedMessage(_statusText, _statusOptionText), GUI.skin.toggle);
         }
 
         private void WeatherOptionBox()
@@ -510,7 +508,7 @@ namespace ModTime
 
         public void ToggleProgressTime(bool isEnabled)
         {
-            if (isEnabled)
+            if (isEnabled != IsProgressTimeEnabled)
             {
                 MainLevel.Instance.StartDayTimeProgress();
             }
@@ -522,7 +520,7 @@ namespace ModTime
 
         public void ToggleDayTime(bool isEnabled)
         {
-            if (isEnabled && !IsNight())
+            if (isEnabled != IsDayTimeEnabled && !IsNight())
             {
                 MainLevel.Instance.SetDayTime(5,0);
             }
@@ -535,7 +533,7 @@ namespace ModTime
         public static string ProgressTimeStatusChanged(bool isEnabled)
         {
             string msg;
-            if (isEnabled == true)
+            if (isEnabled)
             {
                 GUI.color = Color.green;
                 msg = $"Time is running. ";
