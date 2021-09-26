@@ -321,19 +321,19 @@ namespace ModTime
                 GUI.color = DefaultGuiColor;
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
-                    GUILayout.Label($"Options for multiplayer", GUI.skin.label);
-                    using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        ModStatusOptionBox();
-                    }
-                    //GUILayout.Label($"Options for weather and time", GUI.skin.label);
-                    //using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    //GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
+                    //GUILayout.Label($"Options for multiplayer", GUI.skin.label);
+                    //using (var playerOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                     //{
-                    //    TimeOptionBox();
-                    //    WeatherOptionBox();
-                    //    DaytimeOptionBox();
+                    //    ModStatusOptionBox();
                     //}
+                    GUILayout.Label($"Options for weather and time", GUI.skin.label);
+                    using (var weathertimeOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        TimeOptionBox();
+                        WeatherOptionBox();
+                        DaytimeOptionBox();
+                    }
                 }
             }
             else
