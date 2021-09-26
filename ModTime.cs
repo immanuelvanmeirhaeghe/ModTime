@@ -51,9 +51,9 @@ namespace ModTime
         public static string InGameYear { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Year.ToString();
         public static string InGameTime { get; set; } = MainLevel.Instance.m_TODSky.Cycle.DateTime.Hour.ToString();
 
-        public bool ProgressTimeOption { get; private set; } = true;
-        public bool WeatherOption { get; private set; } = false;
-        public bool DaytimeOption { get; private set; } = true;
+        public static bool IsTimeProgressing { get; set; } = true;
+        public static bool IsRaining { get; set; } = false;
+        public static bool IsDaytime { get; set; } = true;
 
         public ModTime()
         {
@@ -66,8 +66,14 @@ namespace ModTime
             return Instance;
         }
 
+        public static string SystemInfoChatMessage(string content, Color? color = null)
+            => $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>System</color>:\n{content}";
         public static string OnlyForSinglePlayerOrHostMessage()
             => $"Only available for single player or when host. Host can activate using ModManager.";
+        public static string FlagStateChangedMessage(bool flagState, string content, Color? color = null)
+   => SystemInfoChatMessage(
+       $"<color=#{(color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow))}>{content} { (flagState ? "enabled" : "disabled")  }!</color>",
+       color);
         public static string DayTimeSetMessage(string day, string month, string year, string hour)
             => $"Date time set:\nToday is {day}/{month}/{year}\nat {hour} o'clock.";
         public static string TimeScalesSetMessage(string dayTimeScale, string nightTimeScale)
@@ -77,11 +83,19 @@ namespace ModTime
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
+        public delegate void OnOptionToggled(bool optionValue, string optionText);
+        public static event OnOptionToggled onOptionToggled;
+        private void ModTime_onOptionToggled(bool optionValue, string optionText)
+        {
+            ShowHUDBigInfo(
+                FlagStateChangedMessage(optionValue, optionText));
+        }
+
         public void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
             ModKeybindingId = GetConfigurableKey();
-            InitTimeData();
+            onOptionToggled += ModTime_onOptionToggled;
         }
 
         private void ModManager_onPermissionValueChanged(bool optionValue)
@@ -342,7 +356,7 @@ namespace ModTime
                 {
                     reason = "the game host allowed usage";
                 }
-                GUILayout.Toggle(true, PermissionChangedMessage($"granted", $"{reason}"), GUI.skin.toggle);
+                GUILayout.Toggle(true, PermissionChangedMessage($"granted", reason), GUI.skin.toggle);
             }
             else
             {
@@ -355,101 +369,32 @@ namespace ModTime
                 {
                     reason = "the game host did not allow usage";
                 }
-                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{reason}"), GUI.skin.toggle);
+                GUILayout.Toggle(false, PermissionChangedMessage($"revoked", reason), GUI.skin.toggle);
             }
-        }
-
-        private void WeatherOptionBox()
-        {
-            bool _rainOption = WeatherOption;
-            string _rainOptionText = $"Is it raining?";    // RainStatusChanged(_rainOption);
-            WeatherOption = GUILayout.Toggle(WeatherOption, _rainOptionText, GUI.skin.toggle);
-            ToggleWeather(_rainOption, WeatherOption);
         }
 
         private void TimeOptionBox()
         {
-            bool _timeOption = ProgressTimeOption;
-            string _timeOptionText = $"Progress or stop time? ";    //ProgressTimeStatusChanged(_timeOption);
-            ProgressTimeOption = GUILayout.Toggle(ProgressTimeOption, _timeOptionText, GUI.skin.toggle);
-            ToggleProgressTime(_timeOption, ProgressTimeOption);
+            bool _timeOption = IsTimeProgressing;
+            string _timeOptionText = $"Progress or stop time? ";
+            IsTimeProgressing = GUILayout.Toggle(IsTimeProgressing, _timeOptionText, GUI.skin.toggle);
+            ToggleProgressTime(_timeOption);
+        }
+
+        private void WeatherOptionBox()
+        {
+            bool _rainOptionState = IsRaining;
+            string _rainOptionText = $"Is it raining?";
+            IsRaining = GUILayout.Toggle(IsRaining, _rainOptionText, GUI.skin.toggle);
+            ToggleWeather(_rainOptionState);
         }
 
         private void DaytimeOptionBox()
         {
-            bool _daytimeOption = DaytimeOption;
-            string _daytimeOptionText = $"Is it daytime or night?";    // DayTimeChanged(_daytimeOption);
-            DaytimeOption = GUILayout.Toggle(DaytimeOption, _daytimeOptionText, GUI.skin.toggle);
-            ToggleDayTime(_daytimeOption, DaytimeOption);
-        }
-
-        public void ToggleWeather(bool optionValue, bool toggled)
-        {
-            if (optionValue != toggled)
-            {
-                RainManager.Get().ScenarioStartRain();
-            }
-            else
-            {
-                RainManager.Get().ScenarioStopRain();
-            }
-        }
-
-        public static string ProgressTimeStatusChanged(bool isEnabled)
-        {
-            string msg;
-            if (isEnabled)
-            {
-                GUI.color = Color.green;
-                msg = $"Time is running. ";
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                msg = $"Time has stopped. ";
-            }
-            GUI.color = DefaultGuiColor;
-            msg += $"Click to change time progress.";
-
-            return msg;
-        }
-
-        private static string RainStatusChanged(bool isEnabled)
-        {
-            string msg;
-            if (isEnabled)
-            {
-                GUI.color = Color.cyan;
-                msg = $"It has started raining. ";
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                msg = $"Raining has stopped. ";
-            }
-            GUI.color = DefaultGuiColor;
-            msg += $"Click to change weather.";
-
-            return msg;
-        }
-
-        private static string DayTimeChanged(bool isEnabled)
-        {
-            string msg;
-            if (isEnabled)
-            {
-                GUI.color = Color.green;
-                msg = $"It is morning";
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                msg = $"It is night ";
-            }
-            GUI.color = DefaultGuiColor;
-            msg += $"Click to change daytime.";
-
-            return msg;
+            bool _daytimeOption = IsDaytime;
+            string _daytimeOptionText = $"Is it daytime or night?";
+            IsDaytime = GUILayout.Toggle(IsDaytime, _daytimeOptionText, GUI.skin.toggle);
+            ToggleDaytime(_daytimeOption);
         }
 
         private void OnlyForSingleplayerOrWhenHostBox()
@@ -459,36 +404,6 @@ namespace ModTime
                 GUI.color = Color.yellow;
                 GUILayout.Label(OnlyForSinglePlayerOrHostMessage(), GUI.skin.label);
             }
-        }
-
-        private string StatusForMultiplayer(bool singleplayerEnabled, bool multiplayerEnabled)
-        {
-            string reason = string.Empty;
-            if (singleplayerEnabled || multiplayerEnabled)
-            {
-                GUI.color = Color.green;
-                if (singleplayerEnabled)
-                {
-                    reason = "you are the game host";
-                }
-                if (multiplayerEnabled)
-                {
-                    reason = "the game host allowed usage";
-                }
-            }
-            else
-            {
-                GUI.color = Color.yellow;
-                if (!singleplayerEnabled)
-                {
-                    reason = "you are not the game host";
-                }
-                if (!multiplayerEnabled)
-                {
-                    reason = "the game host did not allow usage";
-                }
-            }
-            return reason;
         }
 
         private void DateTimeCycleBox()
@@ -551,27 +466,51 @@ namespace ModTime
             }
         }
 
-        public void ToggleProgressTime(bool optionValue, bool toggled)
+        public static void ToggleWeather(bool optionState)
         {
-            if (optionValue != toggled)
+            if (optionState != IsRaining)
             {
-                MainLevel.Instance.StartDayTimeProgress();
-            }
-            else
-            {
-                MainLevel.Instance.StopDayTimeProgress(); ;
+                onOptionToggled?.Invoke(optionState, $"Rain option has been");
+                if (IsRaining)
+                {
+                    RainManager.Get().ScenarioStartRain();
+                }
+                else
+                {
+                    RainManager.Get().ScenarioStopRain();
+                }
             }
         }
 
-        public void ToggleDayTime(bool optionValue, bool toggled)
+        public static void ToggleProgressTime(bool optionState)
         {
-            if (optionValue != toggled && !IsNight())
+            if (optionState != IsTimeProgressing)
             {
-                MainLevel.Instance.SetDayTime(5,0);
+                onOptionToggled?.Invoke(optionState, $"Time progress has been");
+                if (IsTimeProgressing)
+                {
+                    MainLevel.Instance.StartDayTimeProgress();
+                }
+                else
+                {
+                    MainLevel.Instance.StopDayTimeProgress(); ;
+                }
             }
-            else
+        }
+
+        public static void ToggleDaytime(bool optionState)
+        {
+            if (optionState != IsDaytime)
             {
-                MainLevel.Instance.SetDayTime(22,0);
+                onOptionToggled?.Invoke(optionState, $"Daytime has been");
+                if (IsDaytime && !IsNight())
+                {
+                    MainLevel.Instance.SetDayTime(5, 0);
+                }
+                else
+                {
+                    MainLevel.Instance.SetDayTime(22, 0);
+                }
             }
         }
 
@@ -674,7 +613,7 @@ namespace ModTime
                 TOD_Sky m_TOD_Sky = MainLevel.Instance.m_TODSky;
                 m_TOD_Sky.Cycle.DateTime = new DateTime(gameYear, gameMonth, gameDay);
                 m_TOD_Sky.Cycle.Hour = gameHour;
-                MainLevel.Instance.m_TODSky  = m_TOD_Sky;
+                MainLevel.Instance.m_TODSky = m_TOD_Sky;
                 ShowHUDBigInfo(HUDBigInfoMessage(DayTimeSetMessage(InGameDay, InGameMonth, InGameYear, InGameTime), MessageType.Info, Color.green));
             }
             catch (Exception exc)
@@ -683,7 +622,7 @@ namespace ModTime
             }
         }
 
-        public bool IsNight()
+        public static bool IsNight()
         {
             if (!(MainLevel.Instance.m_TODSky.Cycle.Hour < 5f))
             {
