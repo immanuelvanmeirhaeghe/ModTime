@@ -29,7 +29,7 @@ namespace ModTime
         private static HUDManager LocalHUDManager;
         private static RainManager LocalRainManager;
         private static Watch LocalWatch;
-        private static Dictionary<int, WatchData> LocalWatchData;
+        private static Dictionary<int, WatchData> LocalWatchData = new Dictionary<int, WatchData>();
 
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 5f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 5f;
@@ -212,15 +212,13 @@ namespace ModTime
             LocalPlayer = Player.Get();
             LocalRainManager = RainManager.Get();
             LocalWatch = Watch.Get();
-            InitTimeData();
+            //InitTimeData();
         }
 
         private void InitTimeData()
         {
             try
             {
-                LocalWatchData = new Dictionary<int, WatchData>();
-
                 GameObject LocalWatchTimeData = LocalWatch.m_Canvas.transform.Find("Time").gameObject;
                 WatchTimeData watchTimeData = new WatchTimeData
                 {
@@ -489,7 +487,7 @@ namespace ModTime
                 using (var timeofdayBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = Color.cyan;
-                    GUILayout.Label(GetWatchTimeData(), GUI.skin.label);
+                    //GUILayout.Label(GetWatchTimeData(), GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label("Click [FFW >>] to fast forward time in-game to the next day-night time cycle: ", GUI.skin.label);
