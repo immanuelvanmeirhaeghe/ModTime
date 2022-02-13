@@ -8,11 +8,16 @@ using UnityEngine.UI;
 
 namespace ModTime
 {
+    /// <summary>
+    /// ModTime is a mod for Green Hell that allows a player to set in-game date and day and night time scales in real time minutes.
+    /// Ingame time can be fast forwarded to the next morning 5AM or night 10PM.
+    /// It also allows to manipulate weather to make it rain or stop raining.
+    /// Press Keypad2 (default) or the key configurable in ModAPI to open the mod screen.
+    /// </summary>
     public class ModTime : MonoBehaviour
     {
         private static ModTime Instance;
-        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Pause;
+
         private static readonly string ModName = nameof(ModTime);
         private static readonly float ModScreenTotalWidth = 500f;
         private static readonly float ModScreenTotalHeight = 150f;
@@ -64,10 +69,52 @@ namespace ModTime
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
+        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
+        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Keypad2;
+
+        private KeyCode GetConfigurableKey(string buttonId)
+        {
+            KeyCode configuredKeyCode = default;
+            string configuredKeybinding = string.Empty;
+
+            try
+            {
+                if (File.Exists(RuntimeConfigurationFile))
+                {
+                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
+                    {
+                        while (xmlReader.Read())
+                        {
+                            if (xmlReader["ID"] == ModName)
+                            {
+                                if (xmlReader.ReadToFollowing(nameof(Button)) && xmlReader["ID"] == buttonId)
+                                {
+                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
+                                }
+                            }
+                        }
+                    }
+                }
+
+                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Keypad").Replace("Oem", "");
+
+                configuredKeyCode = (KeyCode)(!string.IsNullOrEmpty(configuredKeybinding)
+                                                            ? Enum.Parse(typeof(KeyCode), configuredKeybinding)
+                                                            : GetType().GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetConfigurableKey));
+                configuredKeyCode = (KeyCode)(GetType().GetProperty(buttonId)?.GetValue(this));
+                return configuredKeyCode;
+            }
+        }
+
         public void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
-            ModKeybindingId = GetConfigurableKey();
+            ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
         }
 
         private void HandleException(Exception exc, string methodName)
@@ -158,51 +205,6 @@ namespace ModTime
                 InitData();
                 InitSkinUI();
                 InitWindow();
-            }
-        }
-
-        private KeyCode GetConfigurableKey()
-        {
-            KeyCode configuredKeyCode = default;
-            string configuredKeybinding = string.Empty;
-
-            try
-            {
-                //ModAPI.Log.Write($"Searching XML runtime configuration file {RuntimeConfigurationFile}...");
-                if (File.Exists(RuntimeConfigurationFile))
-                {
-                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
-                    {
-                        //ModAPI.Log.Write($"Reading XML runtime configuration file...");
-                        while (xmlReader.Read())
-                        {
-                            //ModAPI.Log.Write($"Searching configuration for Button for Mod with ID = {ModName}...");
-                            if (xmlReader["ID"] == ModName)
-                            {
-                                if (xmlReader.ReadToFollowing(nameof(Button)))
-                                {
-                                    //ModAPI.Log.Write($"Found configuration for Button for Mod with ID = {ModName}!");
-                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
-                                    //ModAPI.Log.Write($"Configured keybinding = {configuredKeybinding}.");
-                                }
-                            }
-                        }
-                    }
-                    //ModAPI.Log.Write($"XML runtime configuration\n{File.ReadAllText(RuntimeConfigurationFile)}\n");
-                }
-
-                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Alpha").Replace("Oem", "");
-
-                configuredKeyCode = !string.IsNullOrEmpty(configuredKeybinding)
-                                                            ? (KeyCode)Enum.Parse(typeof(KeyCode), configuredKeybinding)
-                                                            : ModKeybindingId;
-                //ModAPI.Log.Write($"Configured key code: { configuredKeyCode }");
-                return configuredKeyCode;
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(GetConfigurableKey));
-                return configuredKeyCode;
             }
         }
 
@@ -374,8 +376,7 @@ namespace ModTime
             {
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To toggle the main mod UI, press [{ModKeybindingId}]", GUI.skin.label);
-
+                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
                     MultiplayerOptionBox();
                     WeatherOptionBox();
                 }
