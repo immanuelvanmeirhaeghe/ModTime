@@ -589,15 +589,15 @@ namespace ModTime
             {
                 if (result <= 0f)
                 {
-                    result = 0.1f;
+                    result = 20f;
                 }
-                if (result > 60f)
+                if (result > float.MaxValue)
                 {
                     result = 60f;
                 }
                 return result;
             }
-            ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {toValidate}:\nPlease input numbers only - min. 0.1 and max. 60", MessageType.Error, Color.red));
+            ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {toValidate}:\nPlease input numbers only - min. 0.1", MessageType.Warning, Color.yellow));
             return -1f;
         }
 
