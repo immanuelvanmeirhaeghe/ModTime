@@ -1,11 +1,11 @@
 <Mod ID="ModTime">
   <Compatible>2.4.2</Compatible>
-  <Button Standard="NumPad2" ID="ModKeybindingId">
+  <Button Standard="NumPad2" ID="ShortCutKey">
     <Name>
-      <EN>ModKeybindingId</EN>
+      <EN>ShortCutKey</EN>
     </Name>
     <Description>
-      <EN>Configurable keybinding for mod screen</EN>
+      <EN>Configurable shortcut key for mod screen. Press LeftShift + </EN>
     </Description>
   </Button>
   <Name>
@@ -14,5 +14,5 @@
   <Description>
     <EN>ModTime is a mod for Green Hell that allows a player to custom set in-game day and night cycle time scales, fast-forward daytime and to change some weather options.</EN>
   </Description>
-  <Version>1.0.3.3</Version>
+  <Version>1.0.3.4</Version>
 </Mod>

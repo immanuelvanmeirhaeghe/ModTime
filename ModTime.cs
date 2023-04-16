@@ -192,15 +192,7 @@ namespace ModTime
                 {
                     EnableCursor();
                 }
-            }
-            if (TimeScaleMode == TimeScaleModes.Paused)
-            {
-                LocalTimeManager.Pause(true);
-            }
-            else
-            {
-                LocalTimeManager.Pause(false);
-            }
+            }           
         }
 
         private void ToggleShowUI()
@@ -609,7 +601,6 @@ namespace ModTime
                 HandleException(exc, nameof(OnClickFastForwardDayCycleButton));
             }
         }
-
 
     }
 }

@@ -83,6 +83,14 @@ namespace ModTime.Library
             InitData();
             UpdateSlowMotion();
             UpdateTimeScale();
+            if (TimeScaleMode == TimeScaleModes.Paused)
+            {
+                Pause(true);
+            }
+            else
+            {
+                Pause(false);
+            }
         }
 
         private void InitData()
