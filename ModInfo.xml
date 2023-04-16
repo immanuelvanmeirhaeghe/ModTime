@@ -2,10 +2,10 @@
   <Compatible>2.4.2</Compatible>
   <Button Standard="NumPad2" ID="ShortCutKey">
     <Name>
-      <EN>ShortCutKey</EN>
+      <EN>Configurable shortcut key for mod screen. Press LeftShift + </EN>
     </Name>
     <Description>
-      <EN>Configurable shortcut key for mod screen. Press LeftShift + </EN>
+      <EN>ShortCutKey</EN>
     </Description>
   </Button>
   <Name>

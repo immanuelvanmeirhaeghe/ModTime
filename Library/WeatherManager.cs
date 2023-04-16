@@ -26,14 +26,14 @@ namespace ModTime.Library
         }
 
         public void Start()
-        {
-            ModAPI.Log.Write(ModuleName + "started");
-            Debug.Log(ModuleName + "started");
+        {          
             SetModuleReferences();         
         }
 
         public void Update()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(Update));
+
             InitData();
         }
 
@@ -44,6 +44,8 @@ namespace ModTime.Library
 
         private void InitData()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(InitData));
+
             LocalRainManager = RainManager.Get();
         }
 
@@ -55,18 +57,34 @@ namespace ModTime.Library
 
         public bool StartRain()
         {
-            LocalRainManager.ScenarioStartRain();
-            IsRainEnabled = true;
-            MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(true);
-            return true;
+            try
+            {
+                LocalRainManager.ScenarioStartRain();
+                IsRainEnabled = true;
+                MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(true);
+                return true;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, $"{ModuleName}:{nameof(StartRain)}");
+                return false;
+            }
         }
 
         public bool StopRain()
         {
-            LocalRainManager.ScenarioStopRain();
-            IsRainEnabled = false;
-            MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(false);
-            return true;
+            try
+            {
+                LocalRainManager.ScenarioStopRain();
+                IsRainEnabled = false;
+                MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(false);
+                return true;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, $"{ModuleName}:{nameof(StopRain)}");
+                return false;
+            }
         }
 
     }

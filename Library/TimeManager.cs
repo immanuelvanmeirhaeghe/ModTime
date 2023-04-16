@@ -75,13 +75,13 @@ namespace ModTime.Library
 
         public void Start()
         {
-            ModAPI.Log.Write(ModuleName + "started");
-            Debug.Log(ModuleName + "started");
             SetModuleReferences();          
         }
 
         public void Update()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(Update));
+
             InitData();
             UpdateSlowMotion();
             UpdateTimeScale();
@@ -97,6 +97,8 @@ namespace ModTime.Library
 
         private void InitData()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(InitData));
+
             LocalWatch = Watch.Get();
         }
 

@@ -119,14 +119,14 @@ namespace ModTime.Library
         }
 
         public void Start()
-        {
-            ModAPI.Log.Write(ModuleName + "started");
-            Debug.Log(ModuleName + "started");
+        {         
             SetModuleReferences();          
         }
 
         public void Update()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(Update));
+
             InitData();
             UpdateNutritionMulMap();
             UpdateNutrition();
@@ -134,6 +134,8 @@ namespace ModTime.Library
 
         private void InitData()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(InitData));
+
             LocalPlayerConditionModule = PlayerConditionModule.Get();
             LocalFPPController = Player.Get().m_FPPController;
             LocalConsciousnessController = ConsciousnessController.Get();
@@ -145,6 +147,8 @@ namespace ModTime.Library
         {
            if (HasChanged) 
             {
+                ModAPI.Log.Write(ModuleName + " " + nameof(UpdateNutritionMulMap));
+
                 NutritionMultipliers = new Dictionary<string, float>
                 {
                     { nameof(NutritionFatConsumptionMulNoCarbs), NutritionFatConsumptionMulNoCarbs },
@@ -203,6 +207,8 @@ namespace ModTime.Library
 
         private void UpdateNutrition()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(UpdateNutrition));
+
             NutrientsDepletion nutrientsDepletion = DifficultySettings.ActivePreset.m_NutrientsDepletion;
             if (nutrientsDepletion != 0)
             {
@@ -284,6 +290,8 @@ namespace ModTime.Library
 
         public void GetMultipliers()
         {
+            ModAPI.Log.Write(ModuleName + " " + nameof(GetMultipliers));
+
             foreach (KeyValuePair<string, float> conditionMul in NutritionMultipliers)
             {
                 float _val = conditionMul.Value;
@@ -606,7 +614,6 @@ namespace ModTime.Library
                     default:
                         break;
                 }
-
             }
         }
     }
