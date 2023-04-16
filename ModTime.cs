@@ -1,4 +1,5 @@
 ﻿using ModTime.Enums;
+using ModTime.Library;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +13,7 @@ namespace ModTime
     /// ModTime is a mod for Green Hell that allows a player to set in-game date and day and night time scales in real time minutes.
     /// Ingame time can be fast forwarded to the next morning 5AM or night 10PM.
     /// It also allows to manipulate weather to make it rain or stop raining.
-    /// Press Keypad2 (default) or the key configurable in ModAPI to open the mod screen.
+    /// Press LeftShift+Keypad2 (default) or the key configurable in ModAPI to open the mod screen.
     /// </summary>
     public class ModTime : MonoBehaviour
     {
@@ -27,27 +28,31 @@ namespace ModTime
         private static readonly float ModScreenMaxHeight = 200f;
         private bool ShowUI;
         private Color DefaultGuiColor = GUI.color;
-
-        public static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+        private static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
+        private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
+        private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
+        private static bool IsMinimized { get; set; } = false;
+        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
+        private static KeyCode ShortCutKey { get; set; } = KeyCode.Keypad2;
 
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
-        private static RainManager LocalRainManager;
-        private static Watch LocalWatch;
-        private static Dictionary<int, WatchData> LocalWatchData = new Dictionary<int, WatchData>();
-
-        private static float ModScreenStartPositionX { get; set; } = Screen.width / 5f;
-        private static float ModScreenStartPositionY { get; set; } = Screen.height / 5f;
-        private static bool IsMinimized { get; set; } = false;
-
+        private static WeatherManager LocalWeatherManager;
+        private static HealthManager LocalHealthManager;
+        private static TimeManager LocalTimeManager;
+       
         public static string DayTimeScaleInMinutes { get; set; } = "20";
         public static string NightTimeScaleInMinutes { get; set; } = "10";
+        public static float SlowMotionFactor { get; set; } = 1f;
+        public static int SelectedTimeScaleModeIndex { get; set; } = 0;
+        public static TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
+        public static bool UseDeviceDateAndTime { get; set; } = false;
+        public static bool HasChanged { get; set; } = false;
 
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
         public bool IsRainEnabled { get; private set; } = false;
-        public bool IsWatchInitialized { get; private set; }
-
+        
         public ModTime()
         {
             useGUILayout = true;
@@ -58,63 +63,61 @@ namespace ModTime
             return Instance;
         }
 
-        public static string OnlyForSinglePlayerOrHostMessage()
-            => "Only available for single player or when host. Host can activate using ModManager.";
-        public static string DayTimeSetMessage(string daytime)
-            => $"Daytime fast forwarded. It is {daytime}";
+        public static string DayCycleSetMessage(string daytime)
+            => $"{daytime}";
         public static string TimeScalesSetMessage(string dayTimeScale, string nightTimeScale)
             => $"Time scales set:\nDay time passes in " + dayTimeScale + " realtime minutes\nand night time in " + nightTimeScale + " realtime minutes.";
+        public static string OnlyForSinglePlayerOrHostMessage()
+            => "Only available for single player or when host. Host can activate using ModManager.";
         public static string PermissionChangedMessage(string permission, string reason)
             => $"Permission to use mods and cheats in multiplayer was {permission} because {reason}.";
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
-        private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static KeyCode ModKeybindingId { get; set; } = KeyCode.Keypad2;
-
-        private KeyCode GetConfigurableKey(string buttonId)
+        private KeyCode GetShortCutKey(string buttonId)
         {
-            KeyCode configuredKeyCode = default;
-            string configuredKeybinding = string.Empty;
-
+            KeyCode result = KeyCode.None;
+            string value = string.Empty;
             try
             {
                 if (File.Exists(RuntimeConfigurationFile))
                 {
-                    using (var xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
+                    using (XmlReader xmlReader = XmlReader.Create(new StreamReader(RuntimeConfigurationFile)))
                     {
                         while (xmlReader.Read())
                         {
-                            if (xmlReader["ID"] == ModName)
+                            if (xmlReader["ID"] == ModName && xmlReader.ReadToFollowing("Button") && xmlReader["ID"] == buttonId)
                             {
-                                if (xmlReader.ReadToFollowing(nameof(Button)) && xmlReader["ID"] == buttonId)
-                                {
-                                    configuredKeybinding = xmlReader.ReadElementContentAsString();
-                                }
+                                value = xmlReader.ReadElementContentAsString();
                             }
                         }
                     }
                 }
-
-                configuredKeybinding = configuredKeybinding?.Replace("NumPad", "Keypad").Replace("Oem", "");
-
-                configuredKeyCode = (KeyCode)(!string.IsNullOrEmpty(configuredKeybinding)
-                                                            ? Enum.Parse(typeof(KeyCode), configuredKeybinding)
-                                                            : GetType().GetProperty(buttonId)?.GetValue(this));
-                return configuredKeyCode;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    result = EnumUtils<KeyCode>.GetValue(value);
+                }
+                else if (buttonId == nameof(ShortCutKey))
+                {
+                    result = ShortCutKey;
+                }
+                return result;
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(GetConfigurableKey));
-                configuredKeyCode = (KeyCode)(GetType().GetProperty(buttonId)?.GetValue(this));
-                return configuredKeyCode;
+                HandleException(exc, nameof(GetShortCutKey));
+                if (buttonId == nameof(ShortCutKey))
+                {
+                    result = ShortCutKey;
+                }
+                return result;
             }
         }
 
         public void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
-            ModKeybindingId = GetConfigurableKey(nameof(ModKeybindingId));
+            ShortCutKey = GetShortCutKey(nameof(ShortCutKey));
         }
 
         private void HandleException(Exception exc, string methodName)
@@ -178,7 +181,7 @@ namespace ModTime
 
         private void Update()
         {
-            if (Input.GetKeyDown(ModKeybindingId))
+            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(ShortCutKey))
             {
                 if (!ShowUI)
                 {
@@ -190,6 +193,14 @@ namespace ModTime
                 {
                     EnableCursor();
                 }
+            }
+            if (TimeScaleMode == TimeScaleModes.Paused)
+            {
+                LocalTimeManager.Pause(true);
+            }
+            else
+            {
+                LocalTimeManager.Pause(false);
             }
         }
 
@@ -212,95 +223,9 @@ namespace ModTime
         {
             LocalHUDManager = HUDManager.Get();
             LocalPlayer = Player.Get();
-            LocalRainManager = RainManager.Get();
-            LocalWatch = Watch.Get();
-            //InitTimeData();
-        }
-
-        private void InitTimeData()
-        {
-            try
-            {
-                GameObject LocalWatchTimeData = LocalWatch.m_Canvas.transform.Find("Time").gameObject;
-                WatchTimeData watchTimeData = new WatchTimeData
-                {
-                    m_Parent = LocalWatchTimeData
-                };
-                GameObject watchTimeDataParent = watchTimeData.m_Parent;
-                watchTimeData.m_TimeHourDec = watchTimeDataParent.transform.Find("HourDec").GetComponent<Text>();
-                watchTimeData.m_TimeHourUnit = watchTimeDataParent.transform.Find("HourUnit").GetComponent<Text>();
-                watchTimeData.m_TimeMinuteDec = watchTimeDataParent.transform.Find("MinuteDec").GetComponent<Text>();
-                watchTimeData.m_TimeMinuteUnit = watchTimeDataParent.transform.Find("MinuteUnit").GetComponent<Text>();
-                watchTimeData.m_DayDec = watchTimeDataParent.transform.Find("DayDec").GetComponent<Text>();
-                watchTimeData.m_DayUnit = watchTimeDataParent.transform.Find("DayUnit").GetComponent<Text>();
-                watchTimeData.m_DayName = watchTimeDataParent.transform.Find("DayName").GetComponent<Text>();
-                watchTimeData.m_MonthName = watchTimeDataParent.transform.Find("MonthName").GetComponent<Text>();
-                watchTimeData.m_Parent.SetActive(value: false);
-                LocalWatchData.Add(0, watchTimeData);
-
-                IsWatchInitialized = true;
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(InitTimeData));
-                IsWatchInitialized = false;
-            }
-        }
-
-        private string GetWatchTimeData()
-        {
-            string watchTimeDataString = string.Empty;
-            try
-            {
-                if (!IsWatchInitialized || LocalWatchData == null)
-                {
-                    InitData();
-                }
-                WatchTimeData data = (WatchTimeData)LocalWatchData[0];
-                if (data != null)
-                {
-                    watchTimeDataString = GetWatchInfo(data);
-                }
-                return watchTimeDataString;
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(GetWatchTimeData));
-                return string.Empty;
-            }
-        }
-
-        private string GetWatchInfo(WatchTimeData data)
-        {
-            try
-            {
-                int dayDecimal = Convert.ToInt32(data.m_DayDec?.text);
-                int dayUnit = Convert.ToInt32(data.m_DayUnit?.text);
-                string daySuffix;
-                switch (dayUnit)
-                {
-                    case 1:
-                        daySuffix = "st";
-                        break;
-                    case 2:
-                        daySuffix = "nd";
-                        break;
-                    case 3:
-                        daySuffix = "rd";
-                        break;
-                    default:
-                        daySuffix = "th";
-                        break;
-                }
-
-                return $"Time is {data.m_TimeHourDec?.text}{data.m_TimeHourUnit?.text} : {data.m_TimeMinuteDec?.text}{data.m_TimeMinuteUnit?.text} "
-                          +$" on {data.m_DayName?.text},the {dayDecimal}{dayUnit} {daySuffix} of {data.m_MonthName?.text}";
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(GetWatchInfo));
-                return string.Empty;
-            }
+            LocalHealthManager = HealthManager.Get();
+            LocalTimeManager = TimeManager.Get();
+            LocalWeatherManager = WeatherManager.Get();
         }
 
         private void InitSkinUI()
@@ -310,7 +235,7 @@ namespace ModTime
 
         private void InitWindow()
         {
-            ModTimeScreen = GUILayout.Window(GetHashCode(), ModTimeScreen, InitModTimeScreen, ModName,
+            ModTimeScreen = GUILayout.Window(GetHashCode(), ModTimeScreen, InitModTimeScreen, $"{ModName} created by [Dragon Legion] Immaanuel#4300",
                                                 GUI.skin.window,
                                                 GUILayout.ExpandWidth(true),
                                                 GUILayout.MinWidth(ModScreenMinWidth),
@@ -363,8 +288,9 @@ namespace ModTime
                 if (!IsMinimized)
                 {
                     ModOptionsBox();
-                    TimeScalesBox();
-                    TimeOfDayBox();
+                    DayTimeScalesBox();
+                    DayCycleBox();
+                    CustomTimeScaleBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -376,9 +302,10 @@ namespace ModTime
             {
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To toggle the mod main UI, press [{ModKeybindingId}]", GUI.skin.label);
+                    GUILayout.Label($"To toggle {ModName} main UI, press [{ShortCutKey}]", GUI.skin.label);
                     MultiplayerOptionBox();
                     WeatherOptionBox();
+                    GameTimeOptionBox();
                 }
             }
             else
@@ -455,20 +382,63 @@ namespace ModTime
                 {
                     if (IsRainEnabled)
                     {
-                        LocalRainManager.ScenarioStartRain();
+                        LocalWeatherManager.StartRain();
                     }
                     else
                     {
-                        LocalRainManager.ScenarioStopRain();
-                    }
-                    MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(IsRainEnabled);
-                    string rainOptionMessage = $"Rain { (IsRainEnabled ? "is falling" : "has stopped") }";
-                    ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
+                        LocalWeatherManager.StopRain();
+                    }                   
+                    //string rainOptionMessage = $"Rain { (IsRainEnabled ? "is falling" : "has stopped") }";
+                    //ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
                 }
             }
             catch (Exception exc)
             {
                 HandleException(exc, nameof(RainOption));
+            }
+        }
+
+        private void GameTimeOptionBox()
+        {
+            try
+            {
+                using (var weatheroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = Color.cyan;
+                    GUILayout.Label($"Current time is set {(UseDeviceDateAndTime ? "using device date and time." : "using game date and time." )}.", GUI.skin.label);
+                    GUILayout.Label($"It is now {LocalTimeManager.GetCurrentDateAndTime()}.", GUI.skin.label);
+                    GUI.color = DefaultGuiColor;
+                    GUILayout.Label($"Game time options: ", GUI.skin.label);
+                    UseDeviceOption();
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(WeatherOptionBox));
+            }
+        }
+
+        private void UseDeviceOption()
+        {
+            try
+            {
+                bool _UseDeviceDateAndTime =  UseDeviceDateAndTime;
+                UseDeviceDateAndTime = GUILayout.Toggle(UseDeviceDateAndTime, $"Switch between device - or game date and time.", GUI.skin.toggle);
+                if (_UseDeviceDateAndTime != UseDeviceDateAndTime)
+                {
+                    if (UseDeviceDateAndTime)
+                    {
+                        LocalTimeManager.UseDeviceDateAndTime(true);
+                    }
+                    else
+                    {
+                        LocalTimeManager.UseDeviceDateAndTime(false);
+                    }               
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(UseDeviceOption));
             }
         }
 
@@ -481,20 +451,21 @@ namespace ModTime
             }
         }
 
-        private void TimeOfDayBox()
+        private void DayCycleBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 using (var timeofdayBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUI.color = Color.cyan;
-                    //GUILayout.Label(GetWatchTimeData(), GUI.skin.label);
-
+                {               
                     GUI.color = DefaultGuiColor;
-                    GUILayout.Label("Click [FFW >>] to fast forward time in-game to the next day-night time cycle: ", GUI.skin.label);
-                    if (GUILayout.Button("FFW >>", GUI.skin.button))
+                    GUILayout.Label("Go fast forward to the next day - or night time cycle: ", GUI.skin.label);
+                    using (var actbutScopeView = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        OnClickFastForwardDayCycleButton();
+                        GUILayout.Label($"Click [FFW >>] to set game time to { ( LocalTimeManager.IsNight( ) ? "the start of night time." : "daytime early morning." )  }", GUI.skin.label);
+                        if (GUILayout.Button("FFW >>", GUI.skin.button))
+                        {
+                            OnClickFastForwardDayCycleButton();
+                        }
                     }
                 }
             }
@@ -504,7 +475,7 @@ namespace ModTime
             }
         }
 
-        private void TimeScalesBox()
+        private void DayTimeScalesBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
@@ -515,18 +486,86 @@ namespace ModTime
                     GUILayout.Label($"Current night time length in minutes: {NightTimeScaleInMinutes} ", GUI.skin.label);
 
                     GUI.color = DefaultGuiColor;
-                    GUILayout.Label("Change scales for in-game day and night length in real-life minutes. Then click [Set scales]", GUI.skin.label);
+                    GUILayout.Label("Change scales for in-game day and night length in real-life minutes. To set, click [Apply]", GUI.skin.label);
                     using (var timescalesInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Daytime length: ", GUI.skin.label);
                         DayTimeScaleInMinutes = GUILayout.TextField(DayTimeScaleInMinutes, GUI.skin.textField);
                         GUILayout.Label("Night time length: ", GUI.skin.label);
                         NightTimeScaleInMinutes = GUILayout.TextField(NightTimeScaleInMinutes, GUI.skin.textField);
-                    }
-                    if (GUILayout.Button("Set scales", GUI.skin.button))
+                        if (GUILayout.Button("Apply", GUI.skin.button))
+                        {
+                            OnClickSetTimeScalesButton();
+                        }
+                    }                  
+                }
+            }
+            else
+            {
+                OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void CustomTimeScaleBox()
+        {
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                using (var ctimescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = Color.cyan;
+                    GUILayout.Label($"Current time scale mode: {TimeScaleMode}.", GUI.skin.label);
+                    GUIStyle selectedButtonStyle = new GUIStyle(GUI.skin.button);
+                    selectedButtonStyle.onActive.textColor = Color.cyan;
+
+                    string[] timeScaleModes = GetTimeScaleModes();
+                    int _SelectedTimeScaleModeIndex = SelectedTimeScaleModeIndex;
+                    float _SlowMotionFactor = SlowMotionFactor;
+
+                    GUI.color = DefaultGuiColor;                    
+                    GUILayout.Label("Choose a time scale mode:", GUI.skin.label);
+                    using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        OnClickSetTimeScalesButton();
+                        SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, selectedButtonStyle);
+                        if (_SelectedTimeScaleModeIndex != SelectedTimeScaleModeIndex)
+                        {
+                            TimeScaleMode = EnumUtils<TimeScaleModes>.GetValue(timeScaleModes[SelectedTimeScaleModeIndex]);
+                            LocalTimeManager.SetTimeScaleMode(SelectedTimeScaleModeIndex);
+                        }
                     }
+                    if (TimeScaleMode==TimeScaleModes.Custom)
+                    {
+                        GUILayout.Label("Set custom time scale factor to apply:", GUI.skin.label);
+                        SlowMotionFactor = GUILayout.HorizontalSlider(SlowMotionFactor, 0f, 1f);
+                        if (_SlowMotionFactor != SlowMotionFactor)
+                        {
+                            LocalTimeManager.SetSlowMotionFactor(SlowMotionFactor);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        public string[] GetTimeScaleModes()
+        {
+            return Enum.GetNames(typeof(TimeScaleModes));
+        }
+
+        public void ConditionMultipliersBox()
+        {
+            if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
+            {
+                using (var mulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
+                {
+                    GUI.color = DefaultGuiColor;
+                    GUILayout.Label("Change multipliers for player condition: ", GUI.skin.label);
+
+                    bool _HasChanged = HasChanged;                  
+
+                    LocalHealthManager.GetMultipliers();
                 }
             }
             else
@@ -539,12 +578,15 @@ namespace ModTime
         {
             try
             {
-                float num = ValidateTimeScale(DayTimeScaleInMinutes);
-                float num2 = ValidateTimeScale(NightTimeScaleInMinutes);
-                if (num > 0f && num2 > 0f)
+                bool ok = LocalTimeManager.SetTimeScalesInMinutes(DayTimeScaleInMinutes, NightTimeScaleInMinutes);
+                if (ok)
                 {
-                    SetTimeScales(num, num2);
+                    ShowHUDBigInfo(HUDBigInfoMessage(TimeScalesSetMessage(DayTimeScaleInMinutes, NightTimeScaleInMinutes), MessageType.Info, Color.green));
                 }
+                else
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {DayTimeScaleInMinutes} and {NightTimeScaleInMinutes}:\nPlease input numbers only - min. 0.1", MessageType.Warning, Color.yellow));
+                }            
             }
             catch (Exception exc)
             {
@@ -556,25 +598,14 @@ namespace ModTime
         {
             try
             {
-                TOD_Sky sky = MainLevel.Instance.m_TODSky;
-                DateTime dateTime = sky.Cycle.DateTime;
-                if (dateTime != DateTime.MinValue)
+                string daytime = LocalTimeManager.SetToNextDayCycle();
+                if (!string.IsNullOrEmpty(daytime))
                 {
-                    string daytime = string.Empty;
-                    if (sky.IsNight)
-                    {
-                        dateTime = dateTime.AddDays(1);
-                        MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
-                        MainLevel.Instance.SetDayTime(5, 1);
-                        daytime = nameof(sky.Day);
-                    }
-                    else
-                    {
-                        MainLevel.Instance.SetDayTime(22, 1);
-                        daytime = nameof(sky.Night);
-                    }
-
-                    ShowHUDBigInfo(HUDBigInfoMessage(DayTimeSetMessage(daytime), MessageType.Info, Color.green));
+                    ShowHUDBigInfo(HUDBigInfoMessage(DayCycleSetMessage(daytime), MessageType.Info, Color.green));
+                }
+                else
+                {
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Could not set day cycle!", MessageType.Warning, Color.yellow));
                 }
             }
             catch (Exception exc)
@@ -583,38 +614,6 @@ namespace ModTime
             }
         }
 
-        private float ValidateTimeScale(string toValidate)
-        {
-            if (float.TryParse(toValidate, out var result))
-            {
-                if (result <= 0f)
-                {
-                    result = 20f;
-                }
-                if (result > float.MaxValue)
-                {
-                    result = 60f;
-                }
-                return result;
-            }
-            ShowHUDBigInfo(HUDBigInfoMessage($"Invalid input {toValidate}:\nPlease input numbers only - min. 0.1", MessageType.Warning, Color.yellow));
-            return -1f;
-        }
 
-        private void SetTimeScales(float dayTimeScale, float nightTimeScale)
-        {
-            try
-            {
-                TOD_Time tODTime = MainLevel.Instance.m_TODTime;
-                tODTime.m_DayLengthInMinutes = dayTimeScale;
-                tODTime.m_NightLengthInMinutes = nightTimeScale;
-                MainLevel.Instance.m_TODTime = tODTime;
-                ShowHUDBigInfo(HUDBigInfoMessage(TimeScalesSetMessage(dayTimeScale.ToString(), nightTimeScale.ToString()), MessageType.Info, Color.green));
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(SetTimeScales));
-            }
-        }
     }
 }
