@@ -27,7 +27,13 @@ namespace ModTime.Library
 
         public void Start()
         {
-            SetModuleReferences();
+            ModAPI.Log.Write(ModuleName + "started");
+            Debug.Log(ModuleName + "started");
+            SetModuleReferences();         
+        }
+
+        public void Update()
+        {
             InitData();
         }
 

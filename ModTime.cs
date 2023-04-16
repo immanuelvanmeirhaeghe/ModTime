@@ -115,6 +115,8 @@ namespace ModTime
 
         public void Start()
         {
+            ModAPI.Log.Write(ModName + "started");
+            Debug.Log(ModName + "started");
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
             ShortCutKey = GetShortCutKey(nameof(ShortCutKey));
         }
@@ -123,6 +125,7 @@ namespace ModTime
         {
             string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
             ModAPI.Log.Write(info);
+            Debug.Log(info);
             ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
         }
 

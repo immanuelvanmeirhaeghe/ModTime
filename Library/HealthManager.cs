@@ -120,6 +120,8 @@ namespace ModTime.Library
 
         public void Start()
         {
+            ModAPI.Log.Write(ModuleName + "started");
+            Debug.Log(ModuleName + "started");
             SetModuleReferences();          
         }
 
@@ -136,7 +138,7 @@ namespace ModTime.Library
             LocalFPPController = Player.Get().m_FPPController;
             LocalConsciousnessController = ConsciousnessController.Get();
             LocalInventoryBackpack = InventoryBackpack.Get();
-             LocalPlayerCocaineModule = PlayerCocaineModule.Get();
+            LocalPlayerCocaineModule = PlayerCocaineModule.Get();
         }
 
         private void UpdateNutritionMulMap()
@@ -190,7 +192,7 @@ namespace ModTime.Library
 
         private void SetModuleReferences()
         {
-
+          
         }
 
         private void HandleException(Exception exc, string methodName)
