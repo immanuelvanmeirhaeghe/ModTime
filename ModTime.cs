@@ -47,8 +47,7 @@ namespace ModTime
         public static int SelectedTimeScaleModeIndex { get; set; } = 0;
         public static TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
         public static bool UseDeviceDateAndTime { get; set; } = false;
-        public static bool HasChanged { get; set; } = false;
-
+       
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
         public bool IsRainEnabled { get; private set; } = false;
@@ -562,9 +561,6 @@ namespace ModTime
                 {
                     GUI.color = DefaultGuiColor;
                     GUILayout.Label("Change multipliers for player condition: ", GUI.skin.label);
-
-                    bool _HasChanged = HasChanged;                  
-
                     LocalHealthManager.GetMultipliers();
                 }
             }

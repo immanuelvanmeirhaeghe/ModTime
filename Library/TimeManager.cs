@@ -75,12 +75,12 @@ namespace ModTime.Library
 
         public void Start()
         {
-            SetModuleReferences();
-            InitData();
+            SetModuleReferences();          
         }
 
         public void Update()
         {
+            InitData();
             UpdateSlowMotion();
             UpdateTimeScale();
         }
