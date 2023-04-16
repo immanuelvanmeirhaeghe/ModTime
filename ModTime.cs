@@ -33,7 +33,7 @@ namespace ModTime
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static bool IsMinimized { get; set; } = false;
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static KeyCode ShortCutKey { get; set; } = KeyCode.Keypad2;
+        private static KeyCode ShortcutKey { get; set; } = KeyCode.Keypad2;
 
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
@@ -73,7 +73,7 @@ namespace ModTime
         public static string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{ (headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))  }>{messageType}</color>\n{message}";
 
-        private KeyCode GetShortCutKey(string buttonId)
+        private KeyCode GetShortcutKey(string buttonId)
         {
             KeyCode result = KeyCode.None;
             string value = string.Empty;
@@ -96,18 +96,18 @@ namespace ModTime
                 {
                     result = EnumUtils<KeyCode>.GetValue(value);
                 }
-                else if (buttonId == nameof(ShortCutKey))
+                else if (buttonId == nameof(ShortcutKey))
                 {
-                    result = ShortCutKey;
+                    result = ShortcutKey;
                 }
                 return result;
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(GetShortCutKey));
-                if (buttonId == nameof(ShortCutKey))
+                HandleException(exc, nameof(GetShortcutKey));
+                if (buttonId == nameof(ShortcutKey))
                 {
-                    result = ShortCutKey;
+                    result = ShortcutKey;
                 }
                 return result;
             }
@@ -115,10 +115,8 @@ namespace ModTime
 
         public void Start()
         {
-            ModAPI.Log.Write(ModName + "started");
-            Debug.Log(ModName + "started");
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
-            ShortCutKey = GetShortCutKey(nameof(ShortCutKey));
+            ShortcutKey = GetShortcutKey(nameof(ShortcutKey));
         }
 
         private void HandleException(Exception exc, string methodName)
@@ -183,7 +181,7 @@ namespace ModTime
 
         private void Update()
         {
-            if (Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(ShortCutKey))
+            if (Input.GetKeyDown(ShortcutKey))
             {
                 if (!ShowUI)
                 {
@@ -296,7 +294,7 @@ namespace ModTime
             {
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To toggle {ModName} main UI, press [{ShortCutKey}]", GUI.skin.label);
+                    GUILayout.Label($"To toggle {ModName} main UI, press [{ShortcutKey}]", GUI.skin.label);
                     MultiplayerOptionBox();
                     WeatherOptionBox();
                     GameTimeOptionBox();

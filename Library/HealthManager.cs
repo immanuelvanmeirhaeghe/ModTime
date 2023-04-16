@@ -125,8 +125,6 @@ namespace ModTime.Library
 
         public void Update()
         {
-            ModAPI.Log.Write(ModuleName + " " + nameof(Update));
-
             InitData();
             UpdateNutritionMulMap();
             UpdateNutrition();
@@ -134,8 +132,6 @@ namespace ModTime.Library
 
         private void InitData()
         {
-            ModAPI.Log.Write(ModuleName + " " + nameof(InitData));
-
             LocalPlayerConditionModule = PlayerConditionModule.Get();
             LocalFPPController = Player.Get().m_FPPController;
             LocalConsciousnessController = ConsciousnessController.Get();
