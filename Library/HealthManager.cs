@@ -200,8 +200,9 @@ namespace ModTime.Library
 
         private void HandleException(Exception exc, string methodName)
         {
-            string info = $"[{ModuleName}:{methodName}] throws exception:\n{exc}";
+            string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
+            Debug.Log(info);
         }
 
         private void UpdateNutrition()

@@ -16,21 +16,21 @@ namespace ModTime.Library
         private static Watch LocalWatch;
         private static readonly string ModuleName = nameof(TimeManager);
 
-        public static string SystemInfoServerRestartMessage(Color? color = null)
+        public string SystemInfoServerRestartMessage(Color? color = null)
         {
             return SystemInfoChatMessage("<color=#" + (color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow)) + "><b>Attention all players!</b></color> \nGame host " + GetHostPlayerName() + " is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.", color);
         }
-        public static string SystemInfoChatMessage(string content, Color? color = null)
+        public string SystemInfoChatMessage(string content, Color? color = null)
         {
             return "<color=#" + (color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.red)) + ">System</color>:\n" + content;
         }
-        public static string GetHostPlayerName()
+        public string GetHostPlayerName()
         {
             return P2PSession.Instance.GetSessionMaster().GetDisplayName();
         }
-        public static bool IsHostManager 
+        public bool IsHostManager 
             => ReplTools.AmIMaster();
-        public static bool IsHostInCoop
+        public bool IsHostInCoop
         {
             get
             {
@@ -41,7 +41,7 @@ namespace ModTime.Library
                 return false;
             }
         }
-        public static bool IsHostWithPlayersInCoop
+        public bool IsHostWithPlayersInCoop
         {
             get
             {

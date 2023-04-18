@@ -22,11 +22,11 @@ namespace ModTime
 
         private static readonly string ModName = nameof(ModTime);
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 150f;
+        private static readonly float ModScreenTotalHeight = 250f;
         private static readonly float ModScreenMinWidth = 450f;
         private static readonly float ModScreenMaxWidth = 550f;
         private static readonly float ModScreenMinHeight = 50f;
-        private static readonly float ModScreenMaxHeight = 200f;
+        private static readonly float ModScreenMaxHeight = Screen.height;
         private bool ShowUI;
         private Color DefaultGuiColor = GUI.color;
         private static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
@@ -240,7 +240,17 @@ namespace ModTime
 
         private void ScreenMenuBox()
         {
-            if (GUI.Button(new Rect(ModTimeScreen.width - 40f, 0f, 20f, 20f), "-", GUI.skin.button))
+            string CollapseButtonText;
+            if (IsMinimized)
+            {
+                CollapseButtonText = "O";
+            }
+            else
+            {
+                CollapseButtonText = "-";
+            }
+
+            if (GUI.Button(new Rect(ModTimeScreen.width - 40f, 0f, 20f, 20f), CollapseButtonText, GUI.skin.button))
             {
                 CollapseWindow();
             }
@@ -252,6 +262,8 @@ namespace ModTime
 
         private void CollapseWindow()
         {
+            ModScreenStartPositionX = ModTimeScreen.x;
+            ModScreenStartPositionY = ModTimeScreen.y;
             if (!IsMinimized)
             {
                 ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenMinHeight);
@@ -580,12 +592,11 @@ namespace ModTime
             {
                 if (LocalHealthManager.IsModEnabled)
                 {
-                    using (var mulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    using (var custommulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
                         GUI.color = DefaultGuiColor;
-                        GUILayout.Label("Change multipliers for player condition: ", GUI.skin.label);
-
-                        using (var slidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                        GUILayout.Label("Custom multipliers for player condition: ", GUI.skin.label);
+                        using (var customslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
                         {
                             LocalHealthManager.GetMultiplierSliders();
                         }
@@ -593,13 +604,17 @@ namespace ModTime
                 }
                 else
                 {
-                    using (var defslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                    using (var defmulboxscope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
                         GUI.color = Color.yellow;
-                        GUILayout.Label($"Please enable health manager in the options above to use custom multipliers.");
-                        GUI.color = DefaultGuiColor;
+                        GUILayout.Label($"Please enable health manager in the options above to use custom multipliers.", GUI.skin.label);
 
-                        LocalHealthManager.GetDefaultMultiplierSliders();
+                        GUI.color = DefaultGuiColor;
+                        GUILayout.Label("Default multipliers for player condition: ", GUI.skin.label);
+                        using (var defslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                        {
+                            LocalHealthManager.GetDefaultMultiplierSliders();
+                        }
                     }
                 }
             }
