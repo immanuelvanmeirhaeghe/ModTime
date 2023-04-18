@@ -10,10 +10,11 @@ using UnityEngine.UI;
 namespace ModTime
 {
     /// <summary>
-    /// ModTime is a mod for Green Hell that allows a player to set in-game date and day and night time scales in real time minutes.
+    /// ModTime is a mod for Green Hell that allows a player to set in-game player condition multipliers,
+    /// date and day and night time scales in real time minutes.
     /// Ingame time can be fast forwarded to the next morning 5AM or night 10PM.
     /// It also allows to manipulate weather to make it rain or stop raining.
-    /// Press LeftShift+Keypad2 (default) or the key configurable in ModAPI to open the mod screen.
+    /// Press Keypad2 (default) or the key configurable in ModAPI to open the mod screen.
     /// </summary>
     public class ModTime : MonoBehaviour
     {
@@ -33,7 +34,7 @@ namespace ModTime
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
         private static bool IsMinimized { get; set; } = false;
         private static readonly string RuntimeConfigurationFile = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), "RuntimeConfiguration.xml");
-        private static KeyCode ShortcutKey { get; set; } = KeyCode.Keypad2;
+       
 
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
@@ -41,13 +42,13 @@ namespace ModTime
         private static HealthManager LocalHealthManager;
         private static TimeManager LocalTimeManager;
        
-        public static string DayTimeScaleInMinutes { get; set; } = "20";
-        public static string NightTimeScaleInMinutes { get; set; } = "10";
-        public static float SlowMotionFactor { get; set; } = 1f;
-        public static int SelectedTimeScaleModeIndex { get; set; } = 0;
-        public static TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
-        public static bool UseDeviceDateAndTime { get; set; } = false;
-       
+        public string DayTimeScaleInMinutes { get; set; } = "20";
+        public string NightTimeScaleInMinutes { get; set; } = "10";
+        public float SlowMotionFactor { get; set; } = 1f;
+        public int SelectedTimeScaleModeIndex { get; set; } = 0;
+        public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
+        public bool UseDeviceDateAndTime { get; set; } = false;
+        public KeyCode ShortcutKey { get; set; } = KeyCode.Keypad2;
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
         public bool IsRainEnabled { get; private set; } = false;
@@ -282,7 +283,8 @@ namespace ModTime
                     ModOptionsBox();
                     DayTimeScalesBox();
                     DayCycleBox();
-                    CustomTimeScaleBox();
+                    TimeScalesBox();
+                    ConditionMultipliersBox();
                 }
             }
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
@@ -294,10 +296,12 @@ namespace ModTime
             {
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
+                    GUI.color = DefaultGuiColor;
                     GUILayout.Label($"To toggle {ModName} main UI, press [{ShortcutKey}]", GUI.skin.label);
                     MultiplayerOptionBox();
                     WeatherOptionBox();
                     GameTimeOptionBox();
+                    UseHealthManagerOption();                  
                 }
             }
             else
@@ -312,6 +316,7 @@ namespace ModTime
             {
                 using (var multiplayeroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
+                    GUI.color = DefaultGuiColor;
                     GUILayout.Label("Multiplayer options: ", GUI.skin.label);
                     string multiplayerOptionMessage = string.Empty;
                     if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
@@ -354,6 +359,7 @@ namespace ModTime
             {
                 using (var weatheroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
+                    GUI.color = DefaultGuiColor;
                     GUILayout.Label($"Weather options: ", GUI.skin.label);
                     RainOption();
                 }
@@ -379,9 +385,7 @@ namespace ModTime
                     else
                     {
                         LocalWeatherManager.StopRain();
-                    }                   
-                    //string rainOptionMessage = $"Rain { (IsRainEnabled ? "is falling" : "has stopped") }";
-                    //ShowHUDBigInfo(HUDBigInfoMessage(rainOptionMessage, MessageType.Info, Color.green));
+                    }
                 }
             }
             catch (Exception exc)
@@ -427,6 +431,18 @@ namespace ModTime
                         LocalTimeManager.UseDeviceDateAndTime(false);
                     }               
                 }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(UseDeviceOption));
+            }
+        }
+
+        private void UseHealthManagerOption()
+        {
+            try
+            {            
+                LocalHealthManager.IsModEnabled = GUILayout.Toggle(LocalHealthManager.IsModEnabled, $"Switch health manager on / off.", GUI.skin.toggle);               
             }
             catch (Exception exc)
             {
@@ -498,21 +514,19 @@ namespace ModTime
             }
         }
 
-        private void CustomTimeScaleBox()
+        private void TimeScalesBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 using (var ctimescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUI.color = Color.cyan;
-                    GUILayout.Label($"Current time scale mode: {TimeScaleMode}.", GUI.skin.label);
-                    GUIStyle selectedButtonStyle = new GUIStyle(GUI.skin.button);
-                    selectedButtonStyle.onActive.textColor = Color.cyan;
-
-                    string[] timeScaleModes = GetTimeScaleModes();
+                    TimeScalesInfoBox();
+                    
+                    string[] timeScaleModes = LocalTimeManager.GetTimeScaleModes();
                     int _SelectedTimeScaleModeIndex = SelectedTimeScaleModeIndex;
                     float _SlowMotionFactor = SlowMotionFactor;
-
+                    GUIStyle selectedButtonStyle = new GUIStyle(GUI.skin.button);
+                    selectedButtonStyle.active.textColor = Color.cyan;
                     GUI.color = DefaultGuiColor;                    
                     GUILayout.Label("Choose a time scale mode:", GUI.skin.label);
                     using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
@@ -524,13 +538,17 @@ namespace ModTime
                             LocalTimeManager.SetTimeScaleMode(SelectedTimeScaleModeIndex);
                         }
                     }
-                    if (TimeScaleMode==TimeScaleModes.Custom)
+                    if (TimeScaleMode == TimeScaleModes.Custom)
                     {
-                        GUILayout.Label("Set custom time scale factor to apply:", GUI.skin.label);
-                        SlowMotionFactor = GUILayout.HorizontalSlider(SlowMotionFactor, 0f, 1f);
-                        if (_SlowMotionFactor != SlowMotionFactor)
+                        GUILayout.Label($"Set custom time scale factor to apply:", GUI.skin.label);
+                        using (var cstTScaleScope = new GUILayout.HorizontalScope(GUI.skin.box))
                         {
-                            LocalTimeManager.SetSlowMotionFactor(SlowMotionFactor);
+                            GUILayout.Label($"factor = {SlowMotionFactor})", GUI.skin.label);
+                            SlowMotionFactor = GUILayout.HorizontalSlider(SlowMotionFactor, 0f, 10f);
+                            if (_SlowMotionFactor != SlowMotionFactor)
+                            {
+                                LocalTimeManager.SetSlowMotionFactor(SlowMotionFactor);
+                            }
                         }
                     }
                 }
@@ -541,20 +559,48 @@ namespace ModTime
             }
         }
 
-        public string[] GetTimeScaleModes()
+        private void TimeScalesInfoBox()
         {
-            return Enum.GetNames(typeof(TimeScaleModes));
+            using (var ctimescalesinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                GUI.color = Color.cyan;
+                GUILayout.Label($"Current time scale mode: {TimeScaleMode} = factor {LocalTimeManager.GetFactor(TimeScaleMode)}.", GUI.skin.label);               
+                GUILayout.Label($"Available modes:", GUI.skin.label);
+                string[] timeScaleModes = LocalTimeManager.GetTimeScaleModes();
+                foreach (string mode in timeScaleModes)
+                {
+                    GUILayout.Label($"{mode} = factor {LocalTimeManager.GetFactor(EnumUtils<TimeScaleModes>.GetValue(mode))}.", GUI.skin.label);
+                }
+            }
         }
 
         public void ConditionMultipliersBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
-                using (var mulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
+                if (LocalHealthManager.IsModEnabled)
                 {
-                    GUI.color = DefaultGuiColor;
-                    GUILayout.Label("Change multipliers for player condition: ", GUI.skin.label);
-                    LocalHealthManager.GetMultipliers();
+                    using (var mulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        GUI.color = DefaultGuiColor;
+                        GUILayout.Label("Change multipliers for player condition: ", GUI.skin.label);
+
+                        using (var slidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                        {
+                            LocalHealthManager.GetMultiplierSliders();
+                        }
+                    }
+                }
+                else
+                {
+                    using (var defslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                    {
+                        GUI.color = Color.yellow;
+                        GUILayout.Label($"Please enable health manager in the options above to use custom multipliers.");
+                        GUI.color = DefaultGuiColor;
+
+                        LocalHealthManager.GetDefaultMultiplierSliders();
+                    }
                 }
             }
             else

@@ -95,7 +95,7 @@ namespace ModTime.Library
         public static float EnergyRecoveryDueNutritionPerSecond { get; set; } = 1f;
         public static float EnergyRecoveryDueHydrationPerSecond { get; set; } = 1f;
         public static float DirtinessIncreasePerSecond { get; set; } = 0.1f;
-
+        public bool IsModEnabled { get; set; } = false;
         public  bool HasChanged { get; set; } = false;
 
         public Dictionary<string, float> NutritionMultipliers;
@@ -125,9 +125,12 @@ namespace ModTime.Library
 
         public void Update()
         {
-            InitData();
-            UpdateNutritionMulMap();
-            UpdateNutrition();
+            if (IsModEnabled)
+            {
+                InitData();
+                UpdateNutritionMulMap();
+                UpdateNutrition();
+            }
         }
 
         private void InitData()
@@ -203,8 +206,6 @@ namespace ModTime.Library
 
         private void UpdateNutrition()
         {
-            ModAPI.Log.Write(ModuleName + " " + nameof(UpdateNutrition));
-
             NutrientsDepletion nutrientsDepletion = DifficultySettings.ActivePreset.m_NutrientsDepletion;
             if (nutrientsDepletion != 0)
             {
@@ -284,19 +285,16 @@ namespace ModTime.Library
 
         }
 
-        public void GetMultipliers()
+        public void GetMultiplierSliders()
         {
-            ModAPI.Log.Write(ModuleName + " " + nameof(GetMultipliers));
-
             foreach (KeyValuePair<string, float> conditionMul in NutritionMultipliers)
             {
-                float _val = conditionMul.Value;
-
                 GUILayout.Label(conditionMul.Key, GUI.skin.label);
+                float _val;
                 switch (conditionMul.Key)
                 {
                     case nameof(NutritionFatConsumptionMulNoCarbs):
-                         _val = conditionMul.Value;
+                        _val = conditionMul.Value;
                         NutritionFatConsumptionMulNoCarbs = GUILayout.HorizontalSlider(NutritionFatConsumptionMulNoCarbs, 0f, 1f);
                         if (_val != NutritionFatConsumptionMulNoCarbs)
                         {
@@ -304,7 +302,7 @@ namespace ModTime.Library
                         }
                         break;
                     case nameof(NutritionProteinsConsumptionMulNoCarbs):
-                         _val = conditionMul.Value;
+                        _val = conditionMul.Value;
                         NutritionProteinsConsumptionMulNoCarbs = GUILayout.HorizontalSlider(NutritionProteinsConsumptionMulNoCarbs, 0f, 1f);
                         if (_val != NutritionProteinsConsumptionMulNoCarbs)
                         {
@@ -351,7 +349,7 @@ namespace ModTime.Library
                             HasChanged = true;
                         }
                         break;
-                    case nameof(NutritionProteinsConsumptionActionMul):                        
+                    case nameof(NutritionProteinsConsumptionActionMul):
                         _val = conditionMul.Value;
                         NutritionProteinsConsumptionActionMul = GUILayout.HorizontalSlider(NutritionProteinsConsumptionActionMul, 0f, 10f);
                         if (_val != NutritionProteinsConsumptionActionMul)
@@ -608,6 +606,335 @@ namespace ModTime.Library
                         }
                         break;
                     default:
+
+                        break;
+                }
+            }
+        }
+
+        public void GetDefaultMultiplierSliders()
+        {
+            foreach (KeyValuePair<string, float> conditionMul in NutritionMultipliers)
+            {
+                GUILayout.Label(conditionMul.Key, GUI.skin.label);
+                float _val;
+                string conditionMulKey = conditionMul.Key.Replace("m_",string.Empty);
+                switch (conditionMulKey)
+                {
+                    case nameof(NutritionFatConsumptionMulNoCarbs):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionMulNoCarbs, 0f, 1f);
+                        if (_val != NutritionFatConsumptionMulNoCarbs)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionMulNoCarbs):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionMulNoCarbs, 0f, 1f);
+                        if (_val != NutritionProteinsConsumptionMulNoCarbs)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionRunMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionRunMul, 0f, 1f);
+                        if (_val != NutritionCarbohydratesConsumptionRunMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionRunMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionRunMul, 0f, 1f);
+                        if (_val != NutritionFatConsumptionRunMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionRunMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionRunMul, 0f, 1f);
+                        if (_val != NutritionProteinsConsumptionRunMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionActionMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionActionMul, 0f, 1f);
+                        if (_val != NutritionCarbohydratesConsumptionActionMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionActionMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionActionMul, 0f, 10f);
+                        if (_val != NutritionFatConsumptionActionMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionActionMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionActionMul, 0f, 10f);
+                        if (_val != NutritionProteinsConsumptionActionMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionWeightNormalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionWeightNormalMul, 0f, 1f);
+                        if (_val != NutritionCarbohydratesConsumptionWeightNormalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionWeightNormalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionWeightNormalMul, 0f, 1f);
+                        if (_val != NutritionFatConsumptionWeightNormalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionWeightNormalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionWeightNormalMul, 0f, 1f);
+                        if (_val != NutritionProteinsConsumptionWeightNormalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionWeightOverloadMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionWeightOverloadMul, 0f, 10f);
+                        if (_val != NutritionCarbohydratesConsumptionWeightOverloadMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionWeightOverloadMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionWeightOverloadMul, 0f, 10f);
+                        if (_val != NutritionFatConsumptionWeightOverloadMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionWeightOverloadMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionWeightOverloadMul, 0f, 10f);
+                        if (_val != NutritionProteinsConsumptionWeightOverloadMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionWeightCriticalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionWeightCriticalMul, 0f, 10f);
+                        if (_val != NutritionCarbohydratesConsumptionWeightCriticalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionWeightCriticalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionWeightCriticalMul, 0f, 10f);
+                        if (_val != NutritionFatConsumptionWeightCriticalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionWeightCriticalMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionWeightCriticalMul, 0f, 10f);
+                        if (_val != NutritionProteinsConsumptionWeightCriticalMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HydrationConsumptionRunMul):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HydrationConsumptionRunMul, 0f, 1f);
+                        if (_val != HydrationConsumptionRunMul)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(StaminaConsumptionWalkPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(StaminaConsumptionWalkPerSecond, 0f, 1f);
+                        if (_val != StaminaConsumptionWalkPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(StaminaConsumptionRunPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(StaminaConsumptionRunPerSecond, 0f, 1f);
+                        if (_val != StaminaConsumptionRunPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(StaminaConsumptionDepletedPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(StaminaConsumptionDepletedPerSecond, 0f, 1f);
+                        if (_val != StaminaConsumptionDepletedPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(StaminaRegenerationPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(StaminaRegenerationPerSecond, 0f, 1f);
+                        if (_val != StaminaRegenerationPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionCarbohydratesConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionCarbohydratesConsumptionPerSecond, 0f, 1f);
+                        if (_val != NutritionCarbohydratesConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionFatConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionFatConsumptionPerSecond, 0f, 1f);
+                        if (_val != NutritionFatConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(NutritionProteinsConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(NutritionProteinsConsumptionPerSecond, 0f, 1f);
+                        if (_val != NutritionProteinsConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HydrationConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HydrationConsumptionPerSecond, 0f, 1f);
+                        if (_val != HydrationConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HydrationConsumptionDuringFeverPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HydrationConsumptionDuringFeverPerSecond, 0f, 1f);
+                        if (_val != HydrationConsumptionDuringFeverPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(OxygenConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(OxygenConsumptionPerSecond, 0f, 1f);
+                        if (_val != OxygenConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyConsumptionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyConsumptionPerSecond, 0f, 1f);
+                        if (_val != EnergyConsumptionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyConsumptionPerSecondNoNutrition):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyConsumptionPerSecondNoNutrition, 0f, 1f);
+                        if (_val != EnergyConsumptionPerSecondNoNutrition)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyConsumptionPerSecondFever):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyConsumptionPerSecondFever, 0f, 1f);
+                        if (_val != EnergyConsumptionPerSecondFever)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyConsumptionPerSecondFoodPoison):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyConsumptionPerSecondFoodPoison, 0f, 1f);
+                        if (_val != EnergyConsumptionPerSecondFoodPoison)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HealthLossPerSecondNoNutrition):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HealthLossPerSecondNoNutrition, 0f, 1f);
+                        if (_val != HealthLossPerSecondNoNutrition)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HealthLossPerSecondNoHydration):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HealthLossPerSecondNoHydration, 0f, 1f);
+                        if (_val != HealthLossPerSecondNoHydration)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(HealthLossPerSecondNoOxygen):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(HealthLossPerSecondNoOxygen, 0f, 10f);
+                        if (_val != HealthLossPerSecondNoOxygen)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyLossDueLackOfNutritionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyLossDueLackOfNutritionPerSecond, 0f, 1f);
+                        if (_val != EnergyLossDueLackOfNutritionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyRecoveryDueNutritionPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyRecoveryDueNutritionPerSecond, 0f, 1f);
+                        if (_val != EnergyRecoveryDueNutritionPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(EnergyRecoveryDueHydrationPerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(EnergyRecoveryDueHydrationPerSecond, 0f, 1f);
+                        if (_val != EnergyRecoveryDueHydrationPerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    case nameof(DirtinessIncreasePerSecond):
+                        _val = conditionMul.Value;
+                        _ = GUILayout.HorizontalSlider(DirtinessIncreasePerSecond, 0f, 1f);
+                        if (_val != DirtinessIncreasePerSecond)
+                        {
+                            HasChanged = true;
+                        }
+                        break;
+                    default:
+
                         break;
                 }
             }

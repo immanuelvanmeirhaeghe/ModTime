@@ -208,11 +208,7 @@ namespace ModTime.Library
                         P2PSession.Instance.Restart();
                     }
                 }
-                if (!IsHostWithPlayersInCoop)
-                {
-                    SaveGame.Save();
-                }
-                if (!ReplTools.IsPlayingAlone())
+                if (ReplTools.IsPlayingAlone())
                 {
                     SaveGame.Save();
                     MainLevel.Instance.Initialize();
@@ -383,5 +379,38 @@ namespace ModTime.Library
             string text = $"{(int)hh}:{mm:00}";
             return $"{skyCycle.Day}/{skyCycle.Month}/{skyCycle.Year} at {text}";
         }
+
+        public float GetFactor(TimeScaleModes timeScaleMode)
+        {
+            float factor;
+            switch (timeScaleMode)
+            {
+                case TimeScaleModes.Normal:
+                    factor = 1f;
+                    break;
+                case TimeScaleModes.Medium:
+                    factor = 10f;
+                    break;
+                case TimeScaleModes.High:
+                    factor = 0.1f;
+                    break;
+                case TimeScaleModes.Paused:
+                    factor = 0f;
+                    break;
+                case TimeScaleModes.Custom:
+                    factor = SlowMotionFactor;
+                    break;
+                default:
+                    factor = 1f;
+                    break;
+            }
+            return factor;
+        }
+
+        public string[] GetTimeScaleModes()
+        {
+            return Enum.GetNames(typeof(TimeScaleModes));
+        }
+
     }
 }
