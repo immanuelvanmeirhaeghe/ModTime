@@ -762,26 +762,49 @@ namespace ModTime
                 GUI.color = DefaultGuiColor;
                 ConditionParameterLossOption();
 
-                if(GUILayout.Button($"Default multipliers"))
+                GUI.color = Color.cyan;
+                GUILayout.Label($"Choose which depletion rates to use:", GUI.skin.label);
+                GUI.color = DefaultGuiColor;
+                ConditionOption();
+
+                if (LocalHealthManager.UseDefault)
                 {
-                    ToggleShowUI(1);
+                    if (GUILayout.Button($"Default multipliers"))
+                    {
+                        ToggleShowUI(1);
+                    }
+                    if (ShowDefaultMuls)
+                    {
+                        DefaultMulsScrollViewBox();
+                    }
                 }
-                if (ShowDefaultMuls)
+                else
                 {
-                    DefaultMulsScrollViewBox();
-                }
-                if (GUILayout.Button($"Custom multipliers"))
-                {
-                    ToggleShowUI(2);
-                }
-                if (ShowCustomMuls)
-                {
-                    CustomMulsScrollViewBox();
-                }                         
+                    if (GUILayout.Button($"Custom multipliers"))
+                    {
+                        ToggleShowUI(2);
+                    }
+                    if (ShowCustomMuls)
+                    {
+                        CustomMulsScrollViewBox();
+                    }
+                }                      
             }
             else
             {
                 OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void ConditionOption()
+        {
+            try
+            {
+                LocalHealthManager.UseDefault = GUILayout.Toggle(LocalHealthManager.UseDefault, $"Switch between default (= on) or custom (= off) nutrition multipliers.", GUI.skin.toggle);
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(ConditionOption));
             }
         }
 
@@ -793,7 +816,7 @@ namespace ModTime
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(HealthManagerOption));
+                HandleException(exc, nameof(ConditionParameterLossOption));
             }
         }
 
