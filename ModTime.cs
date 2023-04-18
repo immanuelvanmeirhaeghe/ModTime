@@ -28,6 +28,8 @@ namespace ModTime
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = Screen.height;
         private bool ShowUI;
+        private bool ShowDefaultMuls = false;
+        private bool ShowCustomMuls = false;
         private Color DefaultGuiColor = GUI.color;
         private static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
@@ -51,7 +53,9 @@ namespace ModTime
         public bool IsModActiveForMultiplayer { get; private set; }
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
         public bool IsRainEnabled { get; private set; } = false;
-        
+        public Vector2 DefaultMulsScrollViewPosition { get; private set; }
+        public Vector2 CustomMulsScrollViewPosition { get; private set; }
+
         public ModTime()
         {
             useGUILayout = true;
@@ -188,7 +192,7 @@ namespace ModTime
                     InitData();
                     EnableCursor(blockPlayer: true);
                 }
-                ToggleShowUI();
+                ToggleShowUI(0);
                 if (!ShowUI)
                 {
                     EnableCursor();
@@ -196,9 +200,25 @@ namespace ModTime
             }           
         }
 
-        private void ToggleShowUI()
+        private void ToggleShowUI(int level)
         {
-            ShowUI = !ShowUI;
+            switch (level)
+            {
+                case 0:
+                    ShowUI = !ShowUI;
+                    break;
+                case 1:
+                    ShowDefaultMuls = !ShowDefaultMuls;
+                    break;
+                case 2:
+                    ShowCustomMuls = !ShowCustomMuls;
+                    break;
+                default:
+                    ShowUI = !ShowUI;
+                    ShowDefaultMuls = !ShowDefaultMuls;
+                    ShowCustomMuls = !ShowCustomMuls;
+                    break;
+            }
         }
 
         private void OnGUI()
@@ -292,7 +312,6 @@ namespace ModTime
             ModScreenStartPositionY = ModTimeScreen.y;
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                GUI.color = DefaultGuiColor;
                ScreenMenuBox();
                 if (!IsMinimized)
                 {
@@ -351,7 +370,7 @@ namespace ModTime
                 using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = DefaultGuiColor;
-                    GUILayout.Label($"To toggle {ModName} main UI, press [{ShortcutKey}]", GUI.skin.label);
+                    GUILayout.Label($"Shortcut key to open or close {ModName}: [{ShortcutKey}]", GUI.skin.label);
                     MultiplayerOptionBox();
                     WeatherManagerOption();
                     TimeManagerOption();
@@ -399,6 +418,7 @@ namespace ModTime
                         }
                         _ = GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{multiplayerOptionMessage}"), GUI.skin.toggle);
                     }
+                    GUI.color = DefaultGuiColor;
                 }
             }
             catch (Exception exc)
@@ -659,27 +679,57 @@ namespace ModTime
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 GUI.color = DefaultGuiColor;
-                using (var defslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+                if(GUILayout.Button($"Default multipliers"))
                 {
-                    GUILayout.Label("Default multipliers for player condition: ", GUI.skin.label);
-                    using (var customslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        LocalHealthManager.GetDefaultMultiplierSliders();
-                    }
+                    ToggleShowUI(1);
                 }
-                using (var custommulBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
+                if (ShowDefaultMuls)
                 {
-                    GUILayout.Label("Custom multipliers for player condition: ", GUI.skin.label);
-                    using (var customslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
-                    {
-                        LocalHealthManager.GetMultiplierSliders();
-                    }
-                }                
+                    DefaultMulsScrollViewBox();
+                }
+                if (GUILayout.Button($"Custom multipliers"))
+                {
+                    ToggleShowUI(2);
+                }
+                if (ShowCustomMuls)
+                {
+                    CustomMulsScrollViewBox();
+                }                         
             }
             else
             {
                 OnlyForSingleplayerOrWhenHostBox();
             }
+        }
+
+        private void CustomMulsScrollViewBox()
+        {
+            using (var custommulsslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+            {             
+                CustomMulsScrollView();
+            }
+        }
+
+        private void CustomMulsScrollView()
+        {
+            CustomMulsScrollViewPosition = GUILayout.BeginScrollView(CustomMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(200f));
+            LocalHealthManager.GetCustomMultiplierSliders();
+            GUILayout.EndScrollView();
+        }
+
+        private void DefaultMulsScrollViewBox()
+        {
+            using (var defslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+            {
+                DefaultMulsScrollView();
+            }
+        }
+
+        private void DefaultMulsScrollView()
+        {
+            DefaultMulsScrollViewPosition = GUILayout.BeginScrollView(DefaultMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(200f));
+            LocalHealthManager.GetDefaultMultiplierSliders();
+            GUILayout.EndScrollView();
         }
 
         private void OnClickSetTimeScalesButton()
