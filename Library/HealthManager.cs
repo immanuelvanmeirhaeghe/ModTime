@@ -175,9 +175,9 @@ namespace ModTime.Library
             if (IsModEnabled)
             {
                 InitData();
+                UpdateParameterLoss();
                 UpdateNutritionMulMap();
                 UpdateNutrition();
-                UpdateParameterLoss();
             }         
         }
 
@@ -364,7 +364,7 @@ namespace ModTime.Library
                 {
                     using (var custmulH = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        float _val = MathF.Round(customconditionMul.Value, 1);
+                        float _val = MathF.Round(customconditionMul.Value, 2);
                       
                         if (customconditionMul.Key.ToLower().Contains("carbo"))
                         {

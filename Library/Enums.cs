@@ -1,5 +1,19 @@
 ﻿namespace ModTime.Enums
 {
+    /// <summary>
+    /// Enumerates ModAPI supported game identifiers.
+    /// </summary>
+    public enum GameID
+    {
+        EscapeThePacific,
+        GreenHell,
+        SonsOfTheForest,
+        Subnautica,
+        TheForest,
+        TheForestDedicatedServer,
+        TheForestVR
+    }
+
     public enum DayCycles
     {
         Daytime,

@@ -15,7 +15,12 @@ namespace ModTime.Library
         private static TimeManager Instance;
         private static Watch LocalWatch;
         private static readonly string ModuleName = nameof(TimeManager);
-
+        public bool UseDevice { get; set; } = false;
+        public string DayTimeScaleInMinutes { get; set; } = "20";
+        public string NightTimeScaleInMinutes { get; set; } = "10";
+   
+        public int SelectedTimeScaleModeIndex { get; set; } = 0;
+    
         public string SystemInfoServerRestartMessage(Color? color = null)
         {
             return SystemInfoChatMessage("<color=#" + (color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow)) + "><b>Attention all players!</b></color> \nGame host " + GetHostPlayerName() + " is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.", color);
@@ -191,39 +196,14 @@ namespace ModTime.Library
                 time.UseDeviceDate = set;
                 time.UseDeviceTime = set;
                 MainLevel.Instance.m_TODTime = time;
-                SaveAndReload();
+          
             }
             catch (Exception exc)
             {
                 HandleException(exc, $"{ModuleName}:{nameof(UseDeviceDateAndTime)}");
             }
         }
-
-        private void SaveAndReload()
-        {
-            try
-            {
-                if (IsHostWithPlayersInCoop && ReplTools.CanSaveInCoop())
-                {
-                    P2PSession.Instance.SendTextChatMessage(SystemInfoServerRestartMessage());                   
-                    SaveGame.SaveCoop();
-                    if (ReplTools.AmIMaster())
-                    {
-                        P2PSession.Instance.Restart();
-                    }
-                }
-                if (ReplTools.IsPlayingAlone())
-                {
-                    SaveGame.Save();
-                    MainLevel.Instance.Initialize();
-                }         
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, $"{ModuleName}:{nameof(SaveAndReload)}");
-            }
-        }
-
+        
         private void CycleTimeScaleSpeedup()
         {
             if (TimeScaleMode == TimeScaleModes.Normal)

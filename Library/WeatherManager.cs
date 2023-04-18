@@ -59,8 +59,7 @@ namespace ModTime.Library
         {
             try
             {
-                LocalRainManager.ScenarioStartRain();
-                IsRainEnabled = true;
+                LocalRainManager.ScenarioStartRain();             
                 MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(true);
                 return true;
             }
@@ -76,7 +75,6 @@ namespace ModTime.Library
             try
             {
                 LocalRainManager.ScenarioStopRain();
-                IsRainEnabled = false;
                 MainLevel.Instance.EnableAtmosphereAndCloudsUpdate(false);
                 return true;
             }
