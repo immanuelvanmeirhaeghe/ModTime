@@ -31,6 +31,7 @@ namespace ModTime
         private bool ShowDefaultMuls = false;
         private bool ShowCustomMuls = false;
         private Color DefaultGuiColor = GUI.color;
+        private Color DefaultContentColor = GUI.contentColor;
         private static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
         private static float ModScreenStartPositionX { get; set; } = Screen.width / 2f;
         private static float ModScreenStartPositionY { get; set; } = Screen.height / 2f;
@@ -625,13 +626,20 @@ namespace ModTime
                     string[] timeScaleModes = LocalTimeManager.GetTimeScaleModes();
                     int _SelectedTimeScaleModeIndex = SelectedTimeScaleModeIndex;
                     float _SlowMotionFactor = SlowMotionFactor;
-                    GUIStyle selectedButtonStyle = new GUIStyle(GUI.skin.button);
-                    selectedButtonStyle.active.textColor = Color.cyan;
+                    
                     GUI.color = DefaultGuiColor;                    
                     GUILayout.Label("Choose a time scale mode:", GUI.skin.label);
                     using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, selectedButtonStyle);
+                        if (_SelectedTimeScaleModeIndex == SelectedTimeScaleModeIndex)
+                        {
+                            GUI.contentColor = Color.cyan;
+                        }
+                        else
+                        {
+                            GUI.contentColor = DefaultContentColor;
+                        }
+                        SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, GUI.skin.button);
                         if (_SelectedTimeScaleModeIndex != SelectedTimeScaleModeIndex)
                         {
                             TimeScaleMode = EnumUtils<TimeScaleModes>.GetValue(timeScaleModes[SelectedTimeScaleModeIndex]);
@@ -678,6 +686,8 @@ namespace ModTime
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
+                GUI.color = Color.cyan;
+                GUILayout.Label($"Avoid any player condition depletion!", GUI.skin.label);
                 GUI.color = DefaultGuiColor;
                 ConditionParameterLossOption();
 
