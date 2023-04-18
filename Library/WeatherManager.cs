@@ -13,6 +13,7 @@ namespace ModTime.Library
         private static RainManager LocalRainManager;
         private static readonly string ModuleName = nameof(WeatherManager);
         public bool IsRainEnabled { get; set; } = false;
+        public bool IsModEnabled { get; set; } = false;
 
         public WeatherManager()
         {
@@ -32,7 +33,10 @@ namespace ModTime.Library
 
         public void Update()
         {
-            InitData();
+          if (IsModEnabled)
+          {
+                InitData();
+            }
         }
 
         private void SetModuleReferences()

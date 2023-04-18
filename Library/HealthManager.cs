@@ -13,7 +13,7 @@ namespace ModTime.Library
     {
         private static readonly string ModuleName = nameof(HealthManager);
 
-        public static  Dictionary<string, float> DefaultNutritionMultipliers => new Dictionary<string, float>
+        public Dictionary<string, float> DefaultNutritionMultipliers => new Dictionary<string, float>
             {
                 { "m_NutritionFatConsumptionMulNoCarbs", 1f },
                 { "m_NutritionProteinsConsumptionMulNoCarbs", 1f },
@@ -98,7 +98,48 @@ namespace ModTime.Library
         public bool IsModEnabled { get; set; } = false;
         public  bool HasChanged { get; set; } = false;
 
-        public Dictionary<string, float> NutritionMultipliers;
+        public Dictionary<string, float> NutritionMultipliers = new Dictionary<string, float>
+                {
+                    { nameof(NutritionFatConsumptionMulNoCarbs), NutritionFatConsumptionMulNoCarbs },
+                    { nameof(NutritionProteinsConsumptionMulNoCarbs), NutritionProteinsConsumptionMulNoCarbs },
+                    { nameof(NutritionCarbohydratesConsumptionRunMul), NutritionCarbohydratesConsumptionRunMul },
+                    { nameof(NutritionFatConsumptionRunMul), NutritionFatConsumptionRunMul },
+                    { nameof(NutritionProteinsConsumptionRunMul), NutritionProteinsConsumptionRunMul },
+                    { nameof(NutritionCarbohydratesConsumptionActionMul), NutritionCarbohydratesConsumptionActionMul },
+                    { nameof(NutritionFatConsumptionActionMul), NutritionFatConsumptionActionMul },
+                    { nameof(NutritionProteinsConsumptionActionMul), NutritionProteinsConsumptionActionMul },
+                    { nameof(NutritionCarbohydratesConsumptionWeightNormalMul), NutritionCarbohydratesConsumptionWeightNormalMul },
+                    { nameof(NutritionFatConsumptionWeightNormalMul), NutritionFatConsumptionWeightNormalMul },
+                    { nameof(NutritionProteinsConsumptionWeightNormalMul), NutritionProteinsConsumptionWeightNormalMul },
+                    { nameof(NutritionCarbohydratesConsumptionWeightOverloadMul), NutritionCarbohydratesConsumptionWeightOverloadMul },
+                    { nameof(NutritionFatConsumptionWeightOverloadMul), NutritionFatConsumptionWeightOverloadMul },
+                    { nameof(NutritionProteinsConsumptionWeightOverloadMul), NutritionProteinsConsumptionWeightOverloadMul },
+                    { nameof(NutritionCarbohydratesConsumptionWeightCriticalMul), NutritionCarbohydratesConsumptionWeightCriticalMul },
+                    { nameof(NutritionFatConsumptionWeightCriticalMul), NutritionFatConsumptionWeightCriticalMul },
+                    { nameof(NutritionProteinsConsumptionWeightCriticalMul), NutritionProteinsConsumptionWeightCriticalMul },
+                    { nameof(HydrationConsumptionRunMul), HydrationConsumptionRunMul },
+                    { nameof(StaminaConsumptionWalkPerSecond), StaminaConsumptionWalkPerSecond },
+                    { nameof(StaminaConsumptionRunPerSecond), StaminaConsumptionRunPerSecond },
+                    { nameof(StaminaConsumptionDepletedPerSecond), StaminaConsumptionDepletedPerSecond },
+                    { nameof(StaminaRegenerationPerSecond), StaminaRegenerationPerSecond },
+                    { nameof(NutritionCarbohydratesConsumptionPerSecond), NutritionCarbohydratesConsumptionPerSecond },
+                    { nameof(NutritionFatConsumptionPerSecond), NutritionFatConsumptionPerSecond },
+                    { nameof(NutritionProteinsConsumptionPerSecond), NutritionProteinsConsumptionPerSecond },
+                    { nameof(HydrationConsumptionPerSecond), HydrationConsumptionPerSecond },
+                    { nameof(HydrationConsumptionDuringFeverPerSecond), HydrationConsumptionDuringFeverPerSecond },
+                    { nameof(OxygenConsumptionPerSecond), OxygenConsumptionPerSecond },
+                    { nameof(EnergyConsumptionPerSecond), EnergyConsumptionPerSecond },
+                    { nameof(EnergyConsumptionPerSecondNoNutrition), EnergyConsumptionPerSecondNoNutrition },
+                    { nameof(EnergyConsumptionPerSecondFever), EnergyConsumptionPerSecondFever },
+                    { nameof(EnergyConsumptionPerSecondFoodPoison), EnergyConsumptionPerSecondFoodPoison },
+                    { nameof(HealthLossPerSecondNoNutrition), HealthLossPerSecondNoNutrition },
+                    { nameof(HealthLossPerSecondNoHydration), HealthLossPerSecondNoHydration },
+                    { nameof(HealthLossPerSecondNoOxygen), HealthLossPerSecondNoOxygen },
+                    { nameof(EnergyLossDueLackOfNutritionPerSecond), EnergyLossDueLackOfNutritionPerSecond },
+                    { nameof(EnergyRecoveryDueNutritionPerSecond), EnergyRecoveryDueNutritionPerSecond },
+                    { nameof(EnergyRecoveryDueHydrationPerSecond), EnergyRecoveryDueHydrationPerSecond },
+                    { nameof(DirtinessIncreasePerSecond), DirtinessIncreasePerSecond }
+                };
 
         private static HealthManager Instance;        
         private static PlayerConditionModule LocalPlayerConditionModule;
@@ -615,7 +656,7 @@ namespace ModTime.Library
 
         public void GetDefaultMultiplierSliders()
         {
-            foreach (KeyValuePair<string, float> conditionMul in NutritionMultipliers)
+            foreach (KeyValuePair<string, float> conditionMul in DefaultNutritionMultipliers)
             {
                 GUILayout.Label(conditionMul.Key, GUI.skin.label);
                 float _val;

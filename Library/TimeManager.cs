@@ -61,6 +61,7 @@ namespace ModTime.Library
         private float WantedSlowMotionFactor { get; set; } = 1f;
         private float ChangeSlowMotionTime { get; set; } = 0f;
         public float CurentTimeInMinutes { get; set; } = 0f;
+        public bool IsModEnabled { get; set; } = false;
 
         public TimeManager()
         {
@@ -80,16 +81,19 @@ namespace ModTime.Library
 
         public void Update()
         {
-            InitData();
-            UpdateSlowMotion();
-            UpdateTimeScale();
-            if (TimeScaleMode == TimeScaleModes.Paused)
-            {
-                Pause(true);
-            }
-            else
-            {
-                Pause(false);
+           if (IsModEnabled)
+           {
+                InitData();
+                UpdateSlowMotion();
+                UpdateTimeScale();
+                if (TimeScaleMode == TimeScaleModes.Paused)
+                {
+                    Pause(true);
+                }
+                else
+                {
+                    Pause(false);
+                }
             }
         }
 
