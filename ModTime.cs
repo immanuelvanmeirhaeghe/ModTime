@@ -22,12 +22,12 @@ namespace ModTime
 
         private static readonly string ModName = nameof(ModTime);
         private static readonly float ModScreenTotalWidth = 500f;
-        private static readonly float ModScreenTotalHeight = 250f;
-        private static readonly float ModScreenMinWidth = 450f;
+        private static readonly float ModScreenTotalHeight = 450f;
+        private static readonly float ModScreenMinWidth = 500f;
         private static readonly float ModScreenMaxWidth = Screen.width;
         private static readonly float ModScreenMinHeight = 50f;
         private static readonly float ModScreenMaxHeight = Screen.height;
-        private bool ShowUI;
+        private bool ShowUI = false;
         private bool ShowDefaultMuls = false;
         private bool ShowCustomMuls = false;
         private Color DefaultGuiColor = GUI.color;
@@ -50,7 +50,7 @@ namespace ModTime
         public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
         public bool UseDeviceDateAndTime { get; set; } = false;
         public KeyCode ShortcutKey { get; set; } = KeyCode.Keypad2;
-        public bool IsModActiveForMultiplayer { get; private set; }
+        public bool IsModActiveForMultiplayer { get; private set; } = P2PSession.Instance.AmIMaster();
         public bool IsModActiveForSingleplayer => ReplTools.AmIMaster();
         public bool IsRainEnabled { get; private set; } = false;
         public Vector2 DefaultMulsScrollViewPosition { get; private set; }
@@ -679,6 +679,8 @@ namespace ModTime
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 GUI.color = DefaultGuiColor;
+                ConditionParameterLossOption();
+
                 if(GUILayout.Button($"Default multipliers"))
                 {
                     ToggleShowUI(1);
@@ -702,6 +704,18 @@ namespace ModTime
             }
         }
 
+        private void ConditionParameterLossOption()
+        {
+            try
+            {
+                LocalHealthManager.IsParameterLossBlocked = GUILayout.Toggle(LocalHealthManager.IsParameterLossBlocked, $"Switch parameter loss on / off.", GUI.skin.toggle);
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(HealthManagerOption));
+            }
+        }
+
         private void CustomMulsScrollViewBox()
         {
             using (var custommulsslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
@@ -712,7 +726,7 @@ namespace ModTime
 
         private void CustomMulsScrollView()
         {
-            CustomMulsScrollViewPosition = GUILayout.BeginScrollView(CustomMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(200f));
+            CustomMulsScrollViewPosition = GUILayout.BeginScrollView(CustomMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
             LocalHealthManager.GetCustomMultiplierSliders();
             GUILayout.EndScrollView();
         }
@@ -727,7 +741,7 @@ namespace ModTime
 
         private void DefaultMulsScrollView()
         {
-            DefaultMulsScrollViewPosition = GUILayout.BeginScrollView(DefaultMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(200f));
+            DefaultMulsScrollViewPosition = GUILayout.BeginScrollView(DefaultMulsScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
             LocalHealthManager.GetDefaultMultiplierSliders();
             GUILayout.EndScrollView();
         }
