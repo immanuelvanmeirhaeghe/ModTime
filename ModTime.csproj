@@ -327,12 +327,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Library\Enums.cs" />
+    <Compile Include="Data\Enums.cs" />
+    <Compile Include="Data\Multipliers.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
-    <Compile Include="Library\HealthManager.cs" />
-    <Compile Include="Library\TimeManager.cs" />
-    <Compile Include="Library\UIControlManager.cs" />
-    <Compile Include="Library\WeatherManager.cs" />
+    <Compile Include="Managers\HealthManager.cs" />
+    <Compile Include="Managers\TimeManager.cs" />
+    <Compile Include="Managers\UIControlManager.cs" />
+    <Compile Include="Managers\WeatherManager.cs" />
     <Compile Include="ModTime.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace ModTime.Library
+namespace ModTime.Managers
 {
     public class WeatherManager : MonoBehaviour
     {
@@ -21,14 +21,10 @@ namespace ModTime.Library
             Instance = this;
         }
 
-        public static WeatherManager Get()
-        {
-            return Instance;
-        }
+        public static WeatherManager Get() => Instance;
 
         public void Start()
-        {          
-            SetModuleReferences();         
+        {                    
         }
 
         public void Update()
@@ -37,11 +33,6 @@ namespace ModTime.Library
           {
                 InitData();
             }
-        }
-
-        private void SetModuleReferences()
-        {
-          
         }
 
         private void InitData()

@@ -1,4 +1,6 @@
-﻿using ModTime.Enums;
+﻿using CJTools;
+using ModTime.Data;
+using ModTime.Data.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace ModTime.Library
+namespace ModTime.Managers
 {
     public class TimeManager : MonoBehaviour
     {
@@ -79,37 +81,23 @@ namespace ModTime.Library
             return Instance;
         }
 
-        public void Start()
+        private void Start()
         {
-            SetModuleReferences();          
         }
 
-        public void Update()
+        private void Update()
         {
            if (IsModEnabled)
            {
                 InitData();
                 UpdateSlowMotion();
-                UpdateTimeScale();
-                if (TimeScaleMode == TimeScaleModes.Paused)
-                {
-                    Pause(true);
-                }
-                else
-                {
-                    Pause(false);
-                }
+                UpdateTimeScale();             
             }
         }
 
         private void InitData()
         {
             LocalWatch = Watch.Get();
-        }
-
-        private void SetModuleReferences()
-        {
-          
         }
 
         private void HandleException(Exception exc, string methodName)
@@ -123,9 +111,9 @@ namespace ModTime.Library
             MainLevel.Instance.Pause(pause);
         }
 
-        public float ValidateTimeScaleMinutes(string toValidate)
+        public float ValidateTimeScaleMinutes(int toValidate)
         {
-            if (float.TryParse(toValidate, out var result))
+            if (float.TryParse(toValidate.ToString(), out var result))
             {
                 if (result <= 0f)
                 {
@@ -140,7 +128,7 @@ namespace ModTime.Library
             return -1f;
         }
 
-        public bool SetTimeScalesInMinutes(string dayLengthInMinutes, string nightLengthInMinutes)
+        public bool SetTimeScalesInMinutes(int dayLengthInMinutes, int nightLengthInMinutes)
         {
             try
             {
@@ -168,77 +156,28 @@ namespace ModTime.Library
 
         public string SetToNextDayCycle()
         {
-            string daytime = string.Empty;
             DateTime dateTime = MainLevel.Instance.m_TODSky.Cycle.DateTime;
-            if (dateTime != DateTime.MinValue)
-            {                
-                if (IsNight())
-                {
-                    dateTime = dateTime.AddDays(1);
-                    MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
-                    SetDayTime(5, 1);
-                    daytime = DayCycles.Daytime.ToString();
-                }
-                else
-                {
-                    SetDayTime(22, 1);
-                    daytime = DayCycles.Night.ToString();
-                }
-            }
-            return daytime;
-        }
-
-        public void UseDeviceDateAndTime(bool set)
-        {
-            try
+            if (IsNight())
             {
-                TOD_Time time = MainLevel.Instance.m_TODTime;
-                time.UseDeviceDate = set;
-                time.UseDeviceTime = set;
-                MainLevel.Instance.m_TODTime = time;
-          
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, $"{ModuleName}:{nameof(UseDeviceDateAndTime)}");
-            }
-        }
-        
-        private void CycleTimeScaleSpeedup()
-        {
-            if (TimeScaleMode == TimeScaleModes.Normal)
-            {
-                TimeScaleMode = TimeScaleModes.Medium;
+                dateTime = dateTime.AddDays(1);
+                SetDayTime(dateTime.Day, dateTime.Month, dateTime.Year, 5, 1);
+                MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
+                return DayCycles.Daytime.ToString();
             }
             else
             {
-                TimeScaleMode = TimeScaleModes.Normal;
-            }
+                SetDayTime(dateTime.Day, dateTime.Month, dateTime.Year, 22, 1);              
+                return DayCycles.Night.ToString();
+            }          
         }
-
-        private void CycleTimeScaleSlowdown()
-        {
-            if (TimeScaleMode == TimeScaleModes.High)
-            {
-                TimeScaleMode = TimeScaleModes.Normal;
-            }
-            else
-            {
-                TimeScaleMode = TimeScaleModes.High;
-            }
-        }
-
-        public void SetGameDate(int day, int month, int year)
+              
+        public void SetDayTime(int day, int month, int year, int hour, int minutes)
         {
             TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;
             skyCycle.Day = day;
             skyCycle.Month = month;
             skyCycle.Year = year;
-            MainLevel.Instance.SetTimeConnected(skyCycle);
-        }
-
-        public void SetDayTime(int hour, int minutes)
-        {
+            MainLevel.Instance.m_TODSky.Cycle = skyCycle;
             MainLevel.Instance.SetDayTime(hour, minutes);
         }
 
@@ -278,6 +217,16 @@ namespace ModTime.Library
                     TimeScaleModeIndex = (int)TimeScaleMode;
                     break;
             }
+            MainLevel.Instance.SetTimeScaleMode(mode);
+        }
+
+        public float GetSlowMotionFactor()
+        {
+            if (SlowMotionFactor != WantedSlowMotionFactor)
+            {
+                UpdateSlowMotion();
+            }
+            return SlowMotionFactor;
         }
 
         private void UpdateSlowMotion()
@@ -291,63 +240,7 @@ namespace ModTime.Library
 
         public void UpdateTimeScale()
         {
-            float _timeScale = 1f;
-            bool can_pause = true;
-
-            if (!ReplTools.IsPlayingAlone())
-            {
-                ReplTools.ForEachLogicalPlayer(delegate (ReplicatedLogicalPlayer player)
-                {
-                    if (!player.m_PauseGame)
-                    {
-                        can_pause = false;
-                    }
-                });
-            }
-            
-            if (MainLevel.Instance.IsPause() && can_pause)
-            {
-                if (Time.time != 0f)
-                {
-                    _timeScale = 0f;
-                    MainLevel.Instance.PauseAllAudio(pause: true);
-                    WasPausedLastFrame = true;
-                }
-            }
-            else
-            {
-                switch (TimeScaleMode)
-                {
-                    case TimeScaleModes.Normal:
-                        _timeScale = 1f;
-                        break;
-                    case TimeScaleModes.Medium:
-                        _timeScale *= 10f;
-                        break;
-                    case TimeScaleModes.High:
-                        _timeScale *= 0.1f;
-                        break;
-                    case TimeScaleModes.Paused:
-                        _timeScale = 0f;
-                        break;
-                    case TimeScaleModes.Custom:
-                        _timeScale *= TimeScaleFactor;
-                        break;
-                    default:
-                        _timeScale = 1f;
-                        break;
-                }                              
-                if (Time.timeScale == 0f)
-                {
-                    MainLevel.Instance.PauseAllAudio(pause: false);
-                }
-                if (WasPausedLastFrame)
-                {
-                    MainLevel.Instance.m_LastUnpauseTime = Time.time;
-                }
-                WasPausedLastFrame = false;
-            }
-            Time.timeScale = _timeScale * SlowMotionFactor;
+            MainLevel.Instance.UpdateTimeScale();
         }
 
         public bool IsNight()
@@ -355,16 +248,23 @@ namespace ModTime.Library
             return MainLevel.Instance.IsNight();
         }
 
-        public string GetCurrentDateAndTime()
+        public string GetCurrentTime()
         {
             TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;
             float hh = skyCycle.Hour;
             int mm = (int)((skyCycle.Hour - hh) * 60f);
-            string text = $"{(int)hh}:{mm:00}";
-            return $"{skyCycle.Day}/{skyCycle.Month}/{skyCycle.Year} at {text}";
+            string timeWatch = $"{(int)hh}:{mm:00}";
+            return $"{timeWatch}";
         }
 
-        public float GetFactor(TimeScaleModes timeScaleMode)
+        public string GetCurrentDate()
+        {
+            TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;          
+            string dateWatch = $"{skyCycle.Year}-{ skyCycle.Month}-{skyCycle.Day}";
+            return $"{dateWatch}";
+        }
+
+        public float GetTimeScaleFactor(TimeScaleModes timeScaleMode)
         {
             float factor;
             switch (timeScaleMode)
@@ -394,6 +294,11 @@ namespace ModTime.Library
         public string[] GetTimeScaleModes()
         {
             return Enum.GetNames(typeof(TimeScaleModes));
+        }
+
+        public float GetTimeProgressSpeed()
+        {
+            return Time.timeScale;
         }
 
     }

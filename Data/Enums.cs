@@ -1,4 +1,4 @@
-﻿namespace ModTime.Enums
+﻿namespace ModTime.Data.Enums
 {
     /// <summary>
     /// Enumerates ModAPI supported game identifiers.

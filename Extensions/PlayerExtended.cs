@@ -1,4 +1,5 @@
-﻿using ModTime.Library;
+﻿using ModTime.Data.Player.Condition;
+using ModTime.Managers;
 using UnityEngine;
 
 namespace ModTime.Extensions
@@ -12,6 +13,7 @@ namespace ModTime.Extensions
             new GameObject($"__{nameof(WeatherManager)}__").AddComponent<WeatherManager>();
             new GameObject($"__{nameof(HealthManager)}__").AddComponent<HealthManager>();
             new GameObject($"__{nameof(TimeManager)}__").AddComponent<TimeManager>();
+            new GameObject($"__{nameof(Multipliers)}__").AddComponent<Multipliers>();
         }
     }
 }
