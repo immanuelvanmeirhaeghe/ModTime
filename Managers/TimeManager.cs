@@ -238,7 +238,7 @@ namespace ModTime.Managers
             }
         }
 
-        public void UpdateTimeScale()
+        private void UpdateTimeScale()
         {
             MainLevel.Instance.UpdateTimeScale();
         }

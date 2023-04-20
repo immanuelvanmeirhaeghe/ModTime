@@ -13,9 +13,7 @@ namespace ModTime.Managers
         private static UIControlManager Instance;
         public static Color DefaultGuiColor;
         public static Color DefaultGuiContentColor;
-
         public static Color DefaultBackGroundColor;
-
         public static GUISkin DefaultSkin;
 
         public UIControlManager()

@@ -466,17 +466,17 @@ namespace ModTime
                 using (var midScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.ID)}:", GUI.skin.label);
-                    GUILayout.Label($"{Application.productName}", GUI.skin.label);
+                    GUILayout.Label($"{ModName}", GUI.skin.label);
                 }
                 using (var uidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.UniqueID)}:", GUI.skin.label);
-                    GUILayout.Label($"{ModName}.{Application.version}", GUI.skin.label);
+                    GUILayout.Label($"", GUI.skin.label);
                 }
                 using (var versionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     GUILayout.Label($"{nameof(ConfigurableMod.Version)}:", GUI.skin.label);
-                    GUILayout.Label($"{Application.buildGUID}", GUI.skin.label);
+                    GUILayout.Label($"", GUI.skin.label);
                 }
                 GUI.color = Color.cyan;
                 GUILayout.Label("Buttons: ", GUI.skin.label);
@@ -752,7 +752,7 @@ namespace ModTime
                         if (GUILayout.Button("Apply", GUI.skin.button))
                         {
                             LocalTimeManager.SetTimeScaleMode(LocalTimeManager.SelectedTimeScaleModeIndex);
-                        }
+                        }                       
                     }
                     if (LocalTimeManager.TimeScaleMode == TimeScaleModes.Custom)
                     {

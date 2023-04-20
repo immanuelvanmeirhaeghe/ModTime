@@ -14,8 +14,6 @@ namespace ModTime.Managers
     {
         private static readonly string ModuleName = nameof(HealthManager);
 
-        private Color DefaultContentColor = UIControlManager.DefaultGuiContentColor;
-        
         public bool UseDefault { get; set; } = true;
         public bool IsParameterLossBlocked { get; set; } = false;
         public bool IsModEnabled { get; set; } = false;
