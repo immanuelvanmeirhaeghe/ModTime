@@ -40,7 +40,7 @@ namespace ModTime.Managers
 
             using (var sliderHScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
-                GUILayout.Label($"{labelText} ({Mathf.Round(sliderValue)})");
+                GUILayout.Label($"{labelText} ({(float)Math.Round(sliderValue, 2, MidpointRounding.ToEven)})");
                 sliderValue = GUILayout.HorizontalSlider(sliderValue, sliderMinValue, sliderMaxValue);
                 return sliderValue;
             }

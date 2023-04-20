@@ -1,4 +1,5 @@
 ﻿using Enums;
+using ModTime.Data.Enums;
 using ModTime.Data.Player.Condition;
 using System;
 using System.Collections.Generic;
@@ -19,13 +20,16 @@ namespace ModTime.Managers
         public bool IsModEnabled { get; set; } = false;
         public bool HasChanged { get; set; } = false;
 
-        private static HealthManager Instance;        
+        private static HealthManager Instance;
         private static PlayerConditionModule LocalPlayerConditionModule;
         private static FPPController LocalFPPController;
         private static ConsciousnessController LocalConsciousnessController;
         private static InventoryBackpack LocalInventoryBackpack;
         private static PlayerCocaineModule LocalPlayerCocaineModule;
         private static Multipliers LocalMultipliers;
+
+        public NutrientsDepletion ActiveNutrientsDepletionPreset { get; set; } 
+        public int ActiveNutrientsDepletionPresetIndex { get; set; }
 
         public HealthManager()
         {
@@ -55,8 +59,36 @@ namespace ModTime.Managers
             LocalInventoryBackpack = InventoryBackpack.Get();
             LocalPlayerCocaineModule = PlayerCocaineModule.Get();
             LocalMultipliers = Multipliers.Get();
+            ActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
+            ActiveNutrientsDepletionPresetIndex = (int) ActiveNutrientsDepletionPreset;
         }
-        
+
+        public NutrientsDepletion GetActiveNutrientsDepletionPreset()
+        {
+            var _ActiveNutrientsDepletionPreset = DifficultySettings.ActivePreset.m_NutrientsDepletion;
+            return _ActiveNutrientsDepletionPreset;
+        }
+
+        public bool SetActiveNutrientsDepletionPreset(NutrientsDepletion nutrientsDepletion)
+        {
+            try
+            {
+                ActiveNutrientsDepletionPreset = nutrientsDepletion;
+                DifficultySettings.ActivePreset.m_NutrientsDepletion = ActiveNutrientsDepletionPreset;
+                return true;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(GetActiveNutrientsDepletionPreset));
+                return false;
+            }
+        }
+
+        public string[] GetNutrientsDepletionNames()
+        {
+            return Enum.GetNames(typeof(NutrientsDepletion));
+        }
+
         public void UpdateNutrition(bool usedefault = true)
         {
             if(!usedefault)
@@ -287,6 +319,11 @@ namespace ModTime.Managers
         public void BlockParametersLoss()
         {
             LocalPlayerConditionModule.BlockParametersLoss();
+        }
+
+        public bool GetParameterLossBlocked()
+        {
+            return LocalPlayerConditionModule.GetParameterLossBlocked();
         }
 
         private void HandleException(Exception exc, string methodName)
