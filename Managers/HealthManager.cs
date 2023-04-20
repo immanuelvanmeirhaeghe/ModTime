@@ -29,6 +29,8 @@ namespace ModTime.Managers
         private static Multipliers LocalMultipliers;
 
         public NutrientsDepletion ActiveNutrientsDepletionPreset { get; set; } 
+        public int SelectedActiveNutrientsDepletionPresetIndex { get; set; }
+
         public int ActiveNutrientsDepletionPresetIndex { get; set; }
 
         public HealthManager()
@@ -69,11 +71,33 @@ namespace ModTime.Managers
             return _ActiveNutrientsDepletionPreset;
         }
 
-        public bool SetActiveNutrientsDepletionPreset(NutrientsDepletion nutrientsDepletion)
+        public bool SetActiveNutrientsDepletionPreset(int nutrientsDepletionIndex)
         {
             try
             {
-                ActiveNutrientsDepletionPreset = nutrientsDepletion;
+                switch (nutrientsDepletionIndex)
+                {
+                    case 0:
+                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Off;
+                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        break;
+                    case 1:
+                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Low;
+                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        break;
+                    case 2:
+                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Normal;
+                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        break;
+                    case 3:
+                        ActiveNutrientsDepletionPreset = NutrientsDepletion.High;
+                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        break;
+                    default:
+                        ActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
+                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        break;
+                }       
                 DifficultySettings.ActivePreset.m_NutrientsDepletion = ActiveNutrientsDepletionPreset;
                 return true;
             }

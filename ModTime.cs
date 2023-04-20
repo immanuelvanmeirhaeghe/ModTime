@@ -48,7 +48,7 @@ namespace ModTime
         private bool IsMinimized { get; set; } = false;
 
         private static Rect ModTimeScreen = new Rect(ModScreenStartPositionX, ModScreenStartPositionY, ModScreenTotalWidth, ModScreenTotalHeight);
-        private static Rect TimeHUDScreen = new Rect(0f, Screen.height - ModScreenTotalHeight - 50f, TimeHUDTotalWidth, TimeHUDTotalHeight);
+        private static Rect TimeHUDScreen = new Rect(TimeHUDScreenStartPositionX, TimeHUDScreenStartPositionY, TimeHUDTotalWidth, TimeHUDTotalHeight);
 
         private static Player LocalPlayer;
         private static HUDManager LocalHUDManager;
@@ -62,10 +62,10 @@ namespace ModTime
       
         public Vector2 DefaultMulsScrollViewPosition { get; private set; }
         public Vector2 CustomMulsScrollViewPosition { get; private set; }
-        public static float TimeHUDTotalWidth { get; set; } = 200f;
-        public static float TimeHUDTotalHeight { get; set; } = 100f;
-        public float TimeHUDScreenStartPositionX { get; private set; }
-        public float TimeHUDScreenStartPositionY { get; private set; }
+        public static float TimeHUDTotalWidth { get; set; } = 150f;
+        public static float TimeHUDTotalHeight { get; set; } = 150f;
+        public static float TimeHUDScreenStartPositionX { get; private set; } = 0f;
+        public static float TimeHUDScreenStartPositionY { get; private set; } = Screen.height - TimeHUDTotalHeight;
         public bool IsHUDMinimized { get; private set; }
 
         public ModTime()
@@ -252,7 +252,7 @@ namespace ModTime
 
         private void OnGUI()
         {
-            if (ShowUI)
+            if (ShowUI || ShowTimeHUD)
             {
                 InitData();
                 InitSkinUI();
@@ -278,23 +278,16 @@ namespace ModTime
         {
             if (ShowUI)
             {
-                int WindowId = base.GetHashCode();
-                string WindowTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
-                ModTimeScreen = GUILayout.Window(WindowId, ModTimeScreen, InitModTimeScreen, WindowTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModScreenMinWidth), GUILayout.MaxWidth(ModScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight));
+                int modWindowId = base.GetHashCode();
+                string modWindowTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
+                ModTimeScreen = GUILayout.Window(modWindowId, ModTimeScreen, InitModTimeScreen, modWindowTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModScreenMinWidth), GUILayout.MaxWidth(ModScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight));
             }
 
             if (ShowTimeHUD)
             {
-                int wid = GetHashCode();
-                TimeHUDScreen = GUILayout.Window(wid, TimeHUDScreen, InitTimeHUD, $"Watch Info",
-                                                                                        GUI.skin.label,
-                                                                                        GUILayout.ExpandWidth(true),
-                                                                                        GUILayout.MinWidth(ModScreenMinWidth),
-                                                                                        GUILayout.MaxWidth(ModScreenMaxWidth),
-                                                                                        GUILayout.ExpandHeight(true),
-                                                                                        GUILayout.MinHeight(ModScreenMinHeight),
-                                                                                        GUILayout.MaxHeight(ModScreenMaxHeight)
-                                                                                       );
+                int hudWindowId = GetHashCode();
+                string hudWindowTitle = $"Time HUD";
+                TimeHUDScreen = GUILayout.Window(hudWindowId, TimeHUDScreen, InitTimeHUD, hudWindowTitle, GUI.skin.label, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModScreenMinWidth), GUILayout.MaxWidth(ModScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModScreenMinHeight), GUILayout.MaxHeight(ModScreenMaxHeight));
             }
         }
 
@@ -369,7 +362,8 @@ namespace ModTime
         {
             TimeHUDScreenStartPositionX = TimeHUDScreen.x;
             TimeHUDScreenStartPositionY = TimeHUDScreen.y;
-         
+            TimeHUDTotalWidth= TimeHUDScreen.width;
+
             using (var timehudContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                 TimeHUDMenuBox();
@@ -483,6 +477,7 @@ namespace ModTime
         {
             ModScreenStartPositionX = ModTimeScreen.x;
             ModScreenStartPositionY = ModTimeScreen.y;
+            ModScreenTotalWidth = ModTimeScreen.width;
 
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
@@ -508,6 +503,7 @@ namespace ModTime
                 GUI.color = DefaultColor;
 
                 ConditionMultipliersBox();
+                NutrientsSettingsBox();
             }
             else
             {
@@ -730,9 +726,9 @@ namespace ModTime
                     GUILayout.Label($"Time options:", GUI.skin.label);
                     GUI.color = DefaultColor;
 
-                    bool _showTimeHUD = ShowTimeHUD;
-                    ShowTimeHUD = GUILayout.Toggle(ShowTimeHUD, $"Show time HUD?", GUI.skin.toggle);
-                    if (_showTimeHUD != ShowTimeHUD)
+                    bool _EnableTimeHUD = LocalTimeManager.EnableTimeHUD;
+                    LocalTimeManager.EnableTimeHUD = GUILayout.Toggle(LocalTimeManager.EnableTimeHUD, $"Enable the time HUD?", GUI.skin.toggle);
+                    if (_EnableTimeHUD != LocalTimeManager.EnableTimeHUD)
                     {
                         ToggleShowUI(6);
                     }
@@ -845,15 +841,16 @@ namespace ModTime
                 using (var ctimescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     GUI.color = Color.cyan;
-                    GUILayout.Label($"Current time progress speed = {LocalTimeManager.GetTimeProgressSpeed()} =\n " +
-                        $"Time scale factor * slowmotion factor =\n " +
-                        $"{LocalTimeManager.GetTimeScaleFactor(LocalTimeManager.TimeScaleMode)} * {LocalTimeManager.GetSlowMotionFactor()}  ", GUI.skin.label);
+                    GUILayout.Label($"Current time progress speed = {LocalTimeManager.GetTimeProgressSpeed()} =\n" +
+                       $"Time scale factor * slowmotion factor = {LocalTimeManager.GetTimeScaleFactor(LocalTimeManager.TimeScaleMode)} * {LocalTimeManager.GetSlowMotionFactor()}\n ", GUI.skin.label);
                     GUI.color = DefaultColor;
 
                     string[] timeScaleModes = LocalTimeManager.GetTimeScaleModes();
                     int _SelectedTimeScaleModeIndex = LocalTimeManager.SelectedTimeScaleModeIndex;
 
+                    GUI.color = Color.cyan;
                     GUILayout.Label("Choose a time scale mode. To set, click [Apply]", GUI.skin.label);
+                    GUI.color = DefaultColor;
                     using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         LocalTimeManager.SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(LocalTimeManager.SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, GUI.skin.button);
@@ -887,14 +884,61 @@ namespace ModTime
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
+                ConditionMulsSettingsBox();              
+            }
+            else
+            {
+                OnlyForSingleplayerOrWhenHostBox();
+            }
+        }
+
+        private void NutrientsSettingsBox()
+        {
+            using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
+            {
+                string activeDepletionSetToMessage = $"Active nutrients depletion preset: {LocalHealthManager.GetActiveNutrientsDepletionPreset()}";
+                string[] depletionPresets = LocalHealthManager.GetNutrientsDepletionNames();
+                int _SelectedActiveNutrientsDepletionPresetIndex = LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex;
+
+                GUILayout.Label("Choose a nutrients depletion preset. To set, click [Apply]", GUI.skin.label);
+                GUILayout.Label($"{activeDepletionSetToMessage}", GUI.skin.label);
+                using (var apsInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex = GUILayout.SelectionGrid(LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex, depletionPresets, depletionPresets.Length, GUI.skin.button);
+                    if (_SelectedActiveNutrientsDepletionPresetIndex != LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex)
+                    {
+                        LocalHealthManager.ActiveNutrientsDepletionPreset = EnumUtils<NutrientsDepletion>.GetValue(depletionPresets[LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex]);
+                    }
+                    if (GUILayout.Button("Apply", GUI.skin.button))
+                    {
+                        bool ok = LocalHealthManager.SetActiveNutrientsDepletionPreset(LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex);
+                        if (ok)
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage(activeDepletionSetToMessage, MessageType.Info, Color.green));
+                        }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not set {LocalHealthManager.ActiveNutrientsDepletionPreset}", MessageType.Warning, Color.yellow));
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ConditionMulsSettingsBox()
+        {
+            using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
+            {
                 GUI.color = Color.cyan;
                 GUILayout.Label($"Avoid any player condition depletion!", GUI.skin.label);
                 GUI.color = DefaultColor;
                 ConditionParameterLossOption();
 
                 GUI.color = Color.cyan;
-                GUILayout.Label($"Choose which depletion rates to use:", GUI.skin.label);
-                GUI.color = DefaultColor;                
+                GUILayout.Label($"Choose which condition multipliers to use:", GUI.skin.label);
+                GUI.color = Color.yellow;
+                GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", GUI.skin.label);
+                GUI.color = DefaultColor;
                 ConditionOption();
 
                 if (GUILayout.Button($"Default multipliers"))
@@ -905,6 +949,7 @@ namespace ModTime
                 {
                     DefaultMulsScrollViewBox();
                 }
+
                 if (GUILayout.Button($"Custom multipliers"))
                 {
                     ToggleShowUI(2);
@@ -912,23 +957,6 @@ namespace ModTime
                 if (ShowCustomMuls)
                 {
                     CustomMulsScrollViewBox();
-                }
-
-                string activeDepletionSetToMessage = $"Active nutrients depletion preset: {LocalHealthManager.ActiveNutrientsDepletionPreset}";
-                string[] depletionPresets = LocalHealthManager.GetNutrientsDepletionNames();
-                int _SelectedDepletionIndex = LocalHealthManager.ActiveNutrientsDepletionPresetIndex;
-
-                GUI.color = Color.cyan;
-                GUILayout.Label("Choose a nutrients depletion preset. To set, click [Apply]", GUI.skin.label);
-                GUILayout.Label($"{activeDepletionSetToMessage}", GUI.skin.label);
-                GUI.color = DefaultColor;
-                using (var apsInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
-                {
-                    LocalHealthManager.ActiveNutrientsDepletionPresetIndex = GUILayout.SelectionGrid(LocalHealthManager.ActiveNutrientsDepletionPresetIndex, depletionPresets, depletionPresets.Length, GUI.skin.button);
-                    if (_SelectedDepletionIndex != LocalHealthManager.ActiveNutrientsDepletionPresetIndex)
-                    {
-                        LocalHealthManager.ActiveNutrientsDepletionPreset = EnumUtils<NutrientsDepletion>.GetValue(depletionPresets[LocalHealthManager.ActiveNutrientsDepletionPresetIndex]);
-                    }
                 }
 
                 if (GUILayout.Button("Apply", GUI.skin.button))
@@ -941,26 +969,14 @@ namespace ModTime
                     {
                         LocalHealthManager.UnblockParametersLoss();
                     }
-                    ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ",MessageType.Info,Color.white));
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
 
                     LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
-                    ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.white));
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
 
-                    bool ok = LocalHealthManager.SetActiveNutrientsDepletionPreset(LocalHealthManager.ActiveNutrientsDepletionPreset);
-                    if (ok)
-                    {                     
-                        ShowHUDBigInfo(HUDBigInfoMessage(activeDepletionSetToMessage, MessageType.Info, Color.green));
-                    }
-                    else
-                    {
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not set {LocalHealthManager.ActiveNutrientsDepletionPreset}", MessageType.Warning, Color.yellow));
-                    }
                 }
-            }
-            else
-            {
-                OnlyForSingleplayerOrWhenHostBox();
-            }
+            
+            }  
         }
 
         private void ConditionOption()

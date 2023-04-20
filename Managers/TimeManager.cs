@@ -18,6 +18,7 @@ namespace ModTime.Managers
         private static Watch LocalWatch;
         private static readonly string ModuleName = nameof(TimeManager);
         public bool UseDevice { get; set; } = false;
+        public bool EnableTimeHUD { get; set; } = false;
         public string DayTimeScaleInMinutes { get; set; } = "20";
         public string NightTimeScaleInMinutes { get; set; } = "10";
    
