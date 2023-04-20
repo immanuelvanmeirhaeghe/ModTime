@@ -37,8 +37,7 @@ namespace ModTime
 
         private Color DefaultGuiColor = GUI.color;
         private Color DefaultContentColor = GUI.contentColor;
-        private GUIStyle SelectedButton = UIControlManager.ButtonStyleSelected(Color.cyan);
-        private GUIStyle NormalButton = UIControlManager.ButtonStyleNormal(Color.white);
+        private Color DefaultBackGroundColor = GUI.backgroundColor;
 
         private bool ShowUI { get; set; } = false;
         private bool ShowDefaultMuls { get; set; } = false;
@@ -64,6 +63,7 @@ namespace ModTime
         public Vector2 DefaultMulsScrollViewPosition { get; private set; }
         public Vector2 CustomMulsScrollViewPosition { get; private set; }
         public bool ShowTimeHUD { get; private set; }
+        
 
         public ModTime()
         {
@@ -401,9 +401,11 @@ namespace ModTime
                 {
                     GUI.color = Color.yellow;
                     GUILayout.Label($"Weather manager", GUI.skin.label);
+                    GUI.color = Color.cyan;
+                    GUILayout.Label($"Weather options: ", GUI.skin.label);
                     GUI.color = DefaultGuiColor;
 
-                    WeatherOptionBox();
+                    RainOption();
                 }
             }
             else
@@ -423,7 +425,7 @@ namespace ModTime
             {
                 using (var modOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUI.color = Color.yellow;
+                    GUI.color = Color.cyan;
                     GUILayout.Label($"{ModName} options:", GUI.skin.label);
                     GUI.color = DefaultGuiColor;
 
@@ -540,31 +542,12 @@ namespace ModTime
             }
         }
 
-        private void WeatherOptionBox()
-        {
-            try
-            {
-                using (var weatheroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
-                {
-                    GUI.color = Color.yellow;
-                    GUILayout.Label($"Weather options: ", GUI.skin.label);
-                    GUI.color = DefaultGuiColor;
-
-                    RainOption();
-                }
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(WeatherOptionBox));
-            }
-        }
-
         private void RainOption()
         {
             try
             {
                 bool _tRainEnabled = LocalWeatherManager.IsRainEnabled;
-                LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch between raining or dry weather?", GUI.skin.toggle);
+                LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, "Switch between raining or dry weather?", GUI.skin.toggle);
                 if (_tRainEnabled != LocalWeatherManager.IsRainEnabled)
                 {
                     if (LocalWeatherManager.IsRainEnabled)
@@ -589,37 +572,26 @@ namespace ModTime
             {
                 using (var gtimeoptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUI.color = Color.yellow;
-                    GUILayout.Label($"Game time options:", GUI.skin.label);
+                    GUI.color = Color.cyan;
+                    GUILayout.Label($"Time options:", GUI.skin.label);
                     GUI.color = DefaultGuiColor;
 
-                    WatchOption();
+                    bool _showTimeHUD = ShowTimeHUD;
+                    ShowTimeHUD = GUILayout.Toggle(ShowTimeHUD, $"Show time HUD?", GUI.skin.toggle);
+                    if (_showTimeHUD != ShowTimeHUD)
+                    {
+                        TimeHUD();
+                    }
                 }
 
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(WeatherOptionBox));
+                HandleException(exc, nameof(WatchOptionBox));
             }
         }
 
-        private void WatchOption()
-        {
-            try
-            {
-                ShowTimeHUD = GUILayout.Toggle(ShowTimeHUD, $"Show time HUD?", GUI.skin.toggle);
-                if (ShowTimeHUD)
-                {
-                    TimeHUD();
-                }
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(WatchOption));
-            }
-        }
-
-        private static void TimeHUD()
+        private void TimeHUD()
         {
             GUIContent timeWatch = new GUIContent($"{LocalTimeManager.GetCurrentTime()}.");
             GUIContent dateWatch = new GUIContent($"{LocalTimeManager.GetCurrentDate()}.");
@@ -628,8 +600,8 @@ namespace ModTime
             GUI.Label(new Rect(TimeHUDScreen.x,TimeHUDScreen.y, TimeHUDScreen.width, TimeHUDScreen.height/2f), timeWatch.text, GUI.skin.label);
             GUI.Label(new Rect(TimeHUDScreen.x, TimeHUDScreen.y+50f, TimeHUDScreen.width, TimeHUDScreen.height/2f), dateWatch.text, GUI.skin.label);
 
-            GUI.backgroundColor = UIControlManager.DefaultBackGroundColor;
-            GUI.contentColor = UIControlManager.DefaultGuiContentColor;
+            GUI.backgroundColor = DefaultBackGroundColor;
+            GUI.contentColor = DefaultContentColor;
         }
 
         private void WeatherManagerOption()
@@ -710,7 +682,7 @@ namespace ModTime
                     using (var timescalesInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Daytime length: ", GUI.skin.label);
-                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes.ToString(), GUI.skin.textField);
+                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes, GUI.skin.textField);
                         GUILayout.Label("Night time length: ", GUI.skin.label);
                         LocalTimeManager.NightTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.NightTimeScaleInMinutes, GUI.skin.textField);
                         if (GUILayout.Button("Apply", GUI.skin.button))
@@ -744,7 +716,7 @@ namespace ModTime
                     GUILayout.Label("Choose a time scale mode. To set, click [Apply]", GUI.skin.label);
                     using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        LocalTimeManager.SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(LocalTimeManager.SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, SelectedButton);
+                        LocalTimeManager.SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(LocalTimeManager.SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, GUI.skin.button);
                         if (_SelectedTimeScaleModeIndex != LocalTimeManager.SelectedTimeScaleModeIndex)
                         {
                             LocalTimeManager.TimeScaleMode = EnumUtils<TimeScaleModes>.GetValue(timeScaleModes[LocalTimeManager.SelectedTimeScaleModeIndex]);                           

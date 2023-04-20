@@ -10,48 +10,13 @@ namespace ModTime.Managers
 {
     public class UIControlManager : MonoBehaviour
     {
-        private static UIControlManager Instance;
-        public static Color DefaultGuiColor;
-        public static Color DefaultGuiContentColor;
-        public static Color DefaultBackGroundColor;
-        public static GUISkin DefaultSkin;
-
-        public UIControlManager()
-        {
-            InitSkinUI();
-            Instance = this;
-        }
-
-        public static UIControlManager Get() => Instance;
-
-        private void InitSkinUI()
-        {
-            GUI.skin = ModAPI.Interface.Skin;
-            DefaultSkin = ModAPI.Interface.Skin;
-            DefaultGuiColor = GUI.color;
-            DefaultGuiContentColor = GUI.contentColor;
-            DefaultBackGroundColor = GUI.backgroundColor;
-        }
-
-        public static GUIStyle ButtonStyleSelected(Color activeTextColor = default)
-        {
-            activeTextColor = activeTextColor == default ? DefaultGuiColor : activeTextColor;
-            GUIStyle selectedButton = new GUIStyle(GUI.skin.button);
-            selectedButton.active.textColor = activeTextColor;
-            return selectedButton;
-        }
-
-        public static GUIStyle ButtonStyleNormal(Color normalTextColor = default)
-        {
-            normalTextColor = normalTextColor == default ? DefaultGuiColor : normalTextColor;
-            GUIStyle normalButton = new GUIStyle(GUI.skin.button);
-            normalButton.normal.textColor = normalTextColor;            
-            return normalButton;
-        }
+        private static Color DefaultColor = GUI.color;
+        private static Color DefaultContentColor = GUI.contentColor;
+        private static Color DefaultBackGroundColor = GUI.backgroundColor;
 
         public static float CustomHorizontalSlider(float sliderValue, float sliderMinValue, float sliderMaxValue, string labelText)
         {
-            GUI.contentColor = DefaultGuiContentColor;            
+            GUI.contentColor = DefaultContentColor;            
             if (labelText.ToLower().Contains("carbo"))
             {
                 GUI.contentColor = IconColors.GetColor(IconColors.Icon.Carbo);

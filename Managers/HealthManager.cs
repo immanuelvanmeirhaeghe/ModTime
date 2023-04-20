@@ -315,8 +315,7 @@ namespace ModTime.Managers
                         }
                         curIdx++;
                     }
-                }
-                GUI.contentColor = UIControlManager.DefaultGuiContentColor;
+                }              
             }
         }
 
