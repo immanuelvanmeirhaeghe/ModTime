@@ -975,7 +975,7 @@ namespace ModTime
         {
             using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
             {
-                string activeDepletionSetToMessage = $"Current active nutrients depletion preset: {LocalHealthManager.GetActiveNutrientsDepletionPreset()}";
+                string activeDepletionSetToMessage = $"Current active nutrients depletion preset: {LocalHealthManager.SelectedActiveNutrientsDepletionPreset}";
                 GUILayout.Label(activeDepletionSetToMessage, ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
 
                 string[] depletionPresets = LocalHealthManager.GetNutrientsDepletionNames();
@@ -991,12 +991,11 @@ namespace ModTime
                         string selectedPreset = depletionPresets[LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex];
                         LocalHealthManager.SelectedActiveNutrientsDepletionPreset = EnumUtils<NutrientsDepletion>.GetValue(selectedPreset);
                     }
-                    if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.MaxWidth(50f)))
+                    if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(150f)))
                     {
                         bool ok = LocalHealthManager.SetActiveNutrientsDepletionPreset(LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex);
                         if (ok)
-                        {
-                            
+                        {                            
                             ShowHUDBigInfo(HUDBigInfoMessage(activeDepletionSetToMessage, MessageType.Info, Color.green));
                         }
                         else
@@ -1006,7 +1005,15 @@ namespace ModTime
                     }
                     if (GUILayout.Button("Save settings"))
                     {
-                        LocalHealthManager.SaveSettings();
+                        bool saved =LocalHealthManager.SaveSettings();
+                        if (saved)
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
+                        }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
+                        }
                     }
                 }
             }
@@ -1020,11 +1027,10 @@ namespace ModTime
                 ConditionParameterLossOption();
 
                 GUILayout.Label($"Choose which condition multipliers to use:", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.cyan));
-
                 GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredInfoHeaderLabel(InfoHeaderLabel, Color.yellow));
                 ConditionOption();
 
-                using (var ftftftScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                using (var ftftftScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     if (GUILayout.Button($"Default multipliers"))
                     {
@@ -1043,24 +1049,24 @@ namespace ModTime
                     {
                         CustomMulsScrollViewBox();
                     }
+                }
 
-                    if (GUILayout.Button("Apply", GUI.skin.button))
+                if (GUILayout.Button("Apply", GUI.skin.button))
+                {
+                    if (LocalHealthManager.IsParameterLossBlocked)
                     {
-                        if (LocalHealthManager.IsParameterLossBlocked)
-                        {
-                            LocalHealthManager.BlockParametersLoss();
-                        }
-                        else
-                        {
-                            LocalHealthManager.UnblockParametersLoss();
-                        }
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
-
-                        LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
+                        LocalHealthManager.BlockParametersLoss();
                     }
-                }            
-            }  
+                    else
+                    {
+                        LocalHealthManager.UnblockParametersLoss();
+                    }
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
+
+                    LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
+                    ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
+                }
+            }
         }
 
         private void ConditionOption()

@@ -48,7 +48,6 @@ namespace ModTime.Managers
 
         public void Start()
         {
-            LoadSettings();
         }
 
         private void Update()
@@ -61,6 +60,7 @@ namespace ModTime.Managers
 
         private void InitData()
         {
+            LoadSettings();
             LocalPlayerConditionModule = PlayerConditionModule.Get();
             LocalFPPController = Player.Get().m_FPPController;
             LocalConsciousnessController = ConsciousnessController.Get();
