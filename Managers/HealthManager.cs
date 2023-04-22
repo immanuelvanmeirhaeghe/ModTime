@@ -408,7 +408,7 @@ namespace ModTime.Managers
             {
                 BinaryFormatter binaryFormatter = new BinaryFormatter();
                 MemoryStream memoryStream = new MemoryStream();
-                binaryFormatter.Serialize(memoryStream, SelectedActiveNutrientsDepletionPreset);
+                binaryFormatter.Serialize(memoryStream, Instance);            
                 DebugUtils.Assert(GreenHellGame.Instance.m_RemoteStorage.FileWrite(SavedSettingsFileName, memoryStream.GetBuffer()), $"{ModuleName}:{nameof(SaveSettings)} failed to save file {SavedSettingsFileName}.");
                 memoryStream.Close();
                 return true;
@@ -446,7 +446,7 @@ namespace ModTime.Managers
                     else
                     {
                         MemoryStream memoryStream = new MemoryStream(array);
-                        SelectedActiveNutrientsDepletionPreset = (NutrientsDepletion)binaryFormatter.Deserialize(memoryStream);
+                        Instance = (HealthManager)binaryFormatter.Deserialize(memoryStream);                     
                         memoryStream.Close();
                     }                  
                 }
