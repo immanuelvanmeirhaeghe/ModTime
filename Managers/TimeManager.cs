@@ -21,7 +21,8 @@ namespace ModTime.Managers
         public bool EnableTimeHUD { get; set; } = false;
         public string DayTimeScaleInMinutes { get; set; } = "20";
         public string NightTimeScaleInMinutes { get; set; } = "10";
-   
+
+        public TimeScaleModes SelectedTimeScaleMode { get; set; } = TimeScaleModes.Normal;
         public int SelectedTimeScaleModeIndex { get; set; } = 0;
     
         public string SystemInfoServerRestartMessage(Color? color = null)
@@ -63,7 +64,8 @@ namespace ModTime.Managers
         public bool IsWatchInitialized { get; set; } = false;
         public bool WasPausedLastFrame { get; set; } = false;
         public int TimeScaleModeIndex { get; set; } = 0;
-        public TimeScaleModes SelectedTimeScaleMode { get; set; } = TimeScaleModes.Normal;
+        public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
+        
         public float TimeScaleFactor { get; set; } = 0f;
         public float SlowMotionFactor { get; set; } = 1f;
         private float WantedSlowMotionFactor { get; set; } = 1f;
@@ -103,8 +105,9 @@ namespace ModTime.Managers
 
         private void HandleException(Exception exc, string methodName)
         {
-            string info = $"[{ModuleName}:{methodName}] throws exception:\n{exc}";
+            string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
+            Debug.Log(info);
         }
 
         public void Pause(bool pause)
@@ -146,17 +149,16 @@ namespace ModTime.Managers
 
         public string SetToNextDayCycle()
         {
-            DateTime dateTime = MainLevel.Instance.m_TODSky.Cycle.DateTime;
+            TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;
             if (IsNight())
             {
-                dateTime = dateTime.AddDays(1);
-                SetDayTime(dateTime.Day, dateTime.Month, dateTime.Year, 5, 1);
-                MainLevel.Instance.m_TODSky.Cycle.DateTime = dateTime;
+                skyCycle.DateTime.AddDays(1);
+                SetDayTime(skyCycle.Day, skyCycle.Month, skyCycle.Year, 5, 1);              
                 return DayCycles.Daytime.ToString();
             }
             else
             {
-                SetDayTime(dateTime.Day, dateTime.Month, dateTime.Year, 22, 1);              
+                SetDayTime(skyCycle.Day, skyCycle.Month, skyCycle.Year, 22, 1);            
                 return DayCycles.Night.ToString();
             }          
         }
@@ -167,6 +169,7 @@ namespace ModTime.Managers
             skyCycle.Day = day;
             skyCycle.Month = month;
             skyCycle.Year = year;
+           
             MainLevel.Instance.m_TODSky.Cycle = skyCycle;
             MainLevel.Instance.SetDayTime(hour, minutes);
         }
@@ -183,31 +186,28 @@ namespace ModTime.Managers
             switch (mode)
             {
                 case 0:
-                    SelectedTimeScaleMode = TimeScaleModes.Normal;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Normal;                   
                     break;
                 case 1:
                     SelectedTimeScaleMode = TimeScaleModes.Medium;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 2:
                     SelectedTimeScaleMode = TimeScaleModes.High;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 3:
                     SelectedTimeScaleMode = TimeScaleModes.Paused;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 4:
                     SelectedTimeScaleMode = TimeScaleModes.Custom;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 default:
-                    SelectedTimeScaleMode = TimeScaleModes.Normal;
-                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Normal;                    
                     break;
             }
-            MainLevel.Instance.SetTimeScaleMode(mode);
+            SelectedTimeScaleModeIndex = (int)SelectedTimeScaleMode;
+            TimeScaleMode = SelectedTimeScaleMode;
+            TimeScaleModeIndex = SelectedTimeScaleModeIndex;
+            MainLevel.Instance.SetTimeScaleMode(TimeScaleModeIndex);
         }
 
         public float GetSlowMotionFactor()
