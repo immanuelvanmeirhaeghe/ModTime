@@ -43,12 +43,12 @@ namespace ModTime
         private static bool IsModTimeMinimized { get; set; } = false;
         private static int ModTimeScreenId { get; set; } = -1;
 
-        private static float HUDTimeScreenTotalWidth { get; set; } = 150f;
-        private static float HUDTimeScreenTotalHeight { get; set; } = 150f;
-        private static float HUDTimeScreenMinWidth { get; set; } = 150f;
-        private static float HUDTimeScreenMinHeight { get; set; } = 150f;
-        private static float HUDTimeScreenMaxWidth { get; set; } = 150f;
-        private static float HUDTimeScreenMaxHeight { get; set; } = 150f;
+        private static float HUDTimeScreenTotalWidth { get; set; } = 300f;
+        private static float HUDTimeScreenTotalHeight { get; set; } = 300f;
+        private static float HUDTimeScreenMinWidth { get; set; } = 300f;
+        private static float HUDTimeScreenMinHeight { get; set; } = 300f;
+        private static float HUDTimeScreenMaxWidth { get; set; } = 300f;
+        private static float HUDTimeScreenMaxHeight { get; set; } = 300f;
         private static float HUDTimeScreenStartPositionX { get; set; } = 0f;
         private static float HUDTimeScreenStartPositionY { get; set; } = Screen.height - HUDTimeScreenTotalHeight;
         private static bool IsHUDTimeMinimized { get; set; }
