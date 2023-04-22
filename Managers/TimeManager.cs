@@ -63,7 +63,7 @@ namespace ModTime.Managers
         public bool IsWatchInitialized { get; set; } = false;
         public bool WasPausedLastFrame { get; set; } = false;
         public int TimeScaleModeIndex { get; set; } = 0;
-        public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
+        public TimeScaleModes SelectedTimeScaleMode { get; set; } = TimeScaleModes.Normal;
         public float TimeScaleFactor { get; set; } = 0f;
         public float SlowMotionFactor { get; set; } = 1f;
         private float WantedSlowMotionFactor { get; set; } = 1f;
@@ -112,34 +112,23 @@ namespace ModTime.Managers
             MainLevel.Instance.Pause(pause);
         }
 
-        public float ValidateTimeScaleMinutes(int toValidate)
-        {
-            if (float.TryParse(toValidate.ToString(), out var result))
-            {
-                if (result <= 0f)
-                {
-                    result = 20f;
-                }
-                if (result > 60f)
-                {
-                    result = 60f;
-                }
-                return result;
-            }           
-            return -1f;
-        }
-
         public bool SetTimeScalesInMinutes(int dayLengthInMinutes, int nightLengthInMinutes)
         {
             try
             {
-                float num = ValidateTimeScaleMinutes(dayLengthInMinutes);
-                float num2 = ValidateTimeScaleMinutes(nightLengthInMinutes);
-                if (num > 0f && num2 > 0f)
+                if (dayLengthInMinutes >= 12 * 60 || dayLengthInMinutes <= 0)
+                {
+                    dayLengthInMinutes = 12 * 60;
+                }
+                if (nightLengthInMinutes >= 12 * 60 || nightLengthInMinutes <= 0)
+                {
+                    nightLengthInMinutes = 12 * 60;
+                }
+                if (dayLengthInMinutes > 0f && nightLengthInMinutes > 0f)
                 {
                     TOD_Time time = MainLevel.Instance.m_TODTime;
-                    time.m_DayLengthInMinutes = num;
-                    time.m_NightLengthInMinutes = num2;
+                    time.m_DayLengthInMinutes = dayLengthInMinutes;
+                    time.m_NightLengthInMinutes = nightLengthInMinutes;
                     MainLevel.Instance.m_TODTime = time;
                     return true;
                 }
@@ -194,28 +183,28 @@ namespace ModTime.Managers
             switch (mode)
             {
                 case 0:
-                    TimeScaleMode = TimeScaleModes.Normal;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Normal;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 1:
-                    TimeScaleMode = TimeScaleModes.High;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Medium;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 2:
-                    TimeScaleMode = TimeScaleModes.Medium;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.High;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 3:
-                    TimeScaleMode = TimeScaleModes.Paused;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Paused;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 case 4:
-                    TimeScaleMode = TimeScaleModes.Custom;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Custom;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
                 default:
-                    TimeScaleMode = TimeScaleModes.Normal;
-                    TimeScaleModeIndex = (int)TimeScaleMode;
+                    SelectedTimeScaleMode = TimeScaleModes.Normal;
+                    TimeScaleModeIndex = (int)SelectedTimeScaleMode;
                     break;
             }
             MainLevel.Instance.SetTimeScaleMode(mode);

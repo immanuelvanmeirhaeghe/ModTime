@@ -3,10 +3,14 @@ using ModTime.Data.Enums;
 using ModTime.Data.Player.Condition;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using static GameSettings;
+using UnityStandardAssets.ImageEffects;
 using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
 
 namespace ModTime.Managers
@@ -14,6 +18,7 @@ namespace ModTime.Managers
     public class HealthManager : MonoBehaviour
     {
         private static readonly string ModuleName = nameof(HealthManager);
+        public static readonly string SavedSettingsFileName = " HealthManager.sav";
 
         public bool UseDefault { get; set; } = true;
         public bool IsParameterLossBlocked { get; set; } = false;
@@ -28,7 +33,7 @@ namespace ModTime.Managers
         private static PlayerCocaineModule LocalPlayerCocaineModule;
         private static Multipliers LocalMultipliers;
 
-        public NutrientsDepletion ActiveNutrientsDepletionPreset { get; set; } 
+        public NutrientsDepletion SelectedActiveNutrientsDepletionPreset { get; set; }
         public int SelectedActiveNutrientsDepletionPresetIndex { get; set; }
 
         public int ActiveNutrientsDepletionPresetIndex { get; set; }
@@ -42,15 +47,16 @@ namespace ModTime.Managers
         public static HealthManager Get() => Instance;
 
         public void Start()
-        { 
+        {
+            LoadSettings();
         }
 
         private void Update()
         {
             if (IsModEnabled)
             {
-                InitData();                                       
-            }         
+                InitData();
+            }
         }
 
         private void InitData()
@@ -61,8 +67,8 @@ namespace ModTime.Managers
             LocalInventoryBackpack = InventoryBackpack.Get();
             LocalPlayerCocaineModule = PlayerCocaineModule.Get();
             LocalMultipliers = Multipliers.Get();
-            ActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
-            ActiveNutrientsDepletionPresetIndex = (int) ActiveNutrientsDepletionPreset;
+            SelectedActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
+            ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
         }
 
         public NutrientsDepletion GetActiveNutrientsDepletionPreset()
@@ -78,27 +84,27 @@ namespace ModTime.Managers
                 switch (nutrientsDepletionIndex)
                 {
                     case 0:
-                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Off;
-                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        SelectedActiveNutrientsDepletionPreset = NutrientsDepletion.Off;
+                        ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
                         break;
                     case 1:
-                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Low;
-                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        SelectedActiveNutrientsDepletionPreset = NutrientsDepletion.Low;
+                        ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
                         break;
                     case 2:
-                        ActiveNutrientsDepletionPreset = NutrientsDepletion.Normal;
-                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        SelectedActiveNutrientsDepletionPreset = NutrientsDepletion.Normal;
+                        ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
                         break;
                     case 3:
-                        ActiveNutrientsDepletionPreset = NutrientsDepletion.High;
-                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        SelectedActiveNutrientsDepletionPreset = NutrientsDepletion.High;
+                        ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
                         break;
                     default:
-                        ActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
-                        ActiveNutrientsDepletionPresetIndex = (int)ActiveNutrientsDepletionPreset;
+                        SelectedActiveNutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();
+                        ActiveNutrientsDepletionPresetIndex = (int)SelectedActiveNutrientsDepletionPreset;
                         break;
-                }       
-                DifficultySettings.ActivePreset.m_NutrientsDepletion = ActiveNutrientsDepletionPreset;
+                }
+                DifficultySettings.ActivePreset.m_NutrientsDepletion = SelectedActiveNutrientsDepletionPreset;
                 return true;
             }
             catch (Exception exc)
@@ -115,14 +121,14 @@ namespace ModTime.Managers
 
         public void UpdateNutrition(bool usedefault = true)
         {
-            if(!usedefault)
+            if (!usedefault)
             {
                 UpdateCustomNutrition();
             }
             else
             {
                 UpdateDefaultNutrition();
-            }         
+            }
         }
 
         private static void UpdateDefaultNutrition()
@@ -198,9 +204,9 @@ namespace ModTime.Managers
                 }
                 if (m_ParasiteSickness.IsActive())
                 {
-                    num2 *= m_ParasiteSickness.m_MacroNutricientCarboLossMul * (float)m_ParasiteSickness.m_Level;
-                    num3 *= m_ParasiteSickness.m_MacroNutricientFatLossMul * (float)m_ParasiteSickness.m_Level;
-                    num4 *= m_ParasiteSickness.m_MacroNutricientProteinsLossMul * (float)m_ParasiteSickness.m_Level;
+                    num2 *= m_ParasiteSickness.m_MacroNutricientCarboLossMul * m_ParasiteSickness.m_Level;
+                    num3 *= m_ParasiteSickness.m_MacroNutricientFatLossMul * m_ParasiteSickness.m_Level;
+                    num4 *= m_ParasiteSickness.m_MacroNutricientProteinsLossMul * m_ParasiteSickness.m_Level;
                 }
                 switch (nutrientsDepletion)
                 {
@@ -303,9 +309,9 @@ namespace ModTime.Managers
                 }
                 if (m_ParasiteSickness.IsActive())
                 {
-                    num2 *= m_ParasiteSickness.m_MacroNutricientCarboLossMul * (float)m_ParasiteSickness.m_Level;
-                    num3 *= m_ParasiteSickness.m_MacroNutricientFatLossMul * (float)m_ParasiteSickness.m_Level;
-                    num4 *= m_ParasiteSickness.m_MacroNutricientProteinsLossMul * (float)m_ParasiteSickness.m_Level;
+                    num2 *= m_ParasiteSickness.m_MacroNutricientCarboLossMul * m_ParasiteSickness.m_Level;
+                    num3 *= m_ParasiteSickness.m_MacroNutricientFatLossMul * m_ParasiteSickness.m_Level;
+                    num4 *= m_ParasiteSickness.m_MacroNutricientProteinsLossMul * m_ParasiteSickness.m_Level;
                 }
                 switch (nutrientsDepletion)
                 {
@@ -376,7 +382,7 @@ namespace ModTime.Managers
                         }
                         curIdx++;
                     }
-                }              
+                }
             }
         }
 
@@ -384,18 +390,65 @@ namespace ModTime.Managers
         {
             if (LocalMultipliers.DefaultNutritionMultipliers != null)
             {
-               var ordered = LocalMultipliers.DefaultNutritionMultipliers.OrderBy(x => x.Key).ToList();
+                var ordered = LocalMultipliers.DefaultNutritionMultipliers.OrderBy(x => x.Key).ToList();
 
                 using (var defmulV = new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     foreach (KeyValuePair<string, float> conditionMul in ordered)
                     {
-                        UIControlManager.CustomHorizontalSlider(conditionMul.Value, 0f, conditionMul.Value + 1f, conditionMul.Key);                       
+                        UIControlManager.CustomHorizontalSlider(conditionMul.Value, 0f, conditionMul.Value + 1f, conditionMul.Key);
                     }
-                }               
+                }
+            }
+        }
+
+        public bool SaveSettings()
+        {
+            try
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                MemoryStream memoryStream = new MemoryStream();
+                binaryFormatter.Serialize(memoryStream, SelectedActiveNutrientsDepletionPreset);
+                DebugUtils.Assert(GreenHellGame.Instance.m_RemoteStorage.FileWrite(SavedSettingsFileName, memoryStream.GetBuffer()), $"{ModuleName}:{nameof(SaveSettings)} failed to save file {SavedSettingsFileName}.");
+                memoryStream.Close();
+                return true;
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, $"{ModuleName}:{nameof(SaveSettings)}");
+                return false;
+            }
+        }
+
+        public void LoadSettings()
+        {
+            string text = SavedSettingsFileName;
+            if (GreenHellGame.Instance.FileExistsInRemoteStorage(text))
+            {
+                BinaryFormatter binaryFormatter = new BinaryFormatter();
+                int fileSize = GreenHellGame.Instance.m_RemoteStorage.GetFileSize(text);
+                byte[] array = new byte[fileSize];
+                int num = GreenHellGame.Instance.m_RemoteStorage.FileRead(text, array, fileSize);
+                if (num != fileSize)
+                {
+                    if (num == 0)
+                    {
+                        Debug.LogError("Local file " + text + " is missing!!! Skipping reading data.");
+                    }
+                    else
+                    {
+                        Debug.LogError("Local file " + text + " size mismatch!!! Skipping reading data.");
+                    }
+                    GreenHellGame.Instance.m_RemoteStorage.FileForget(text);
+                }
+                else
+                {
+                    MemoryStream memoryStream = new MemoryStream(array);
+                    SelectedActiveNutrientsDepletionPreset = (NutrientsDepletion)binaryFormatter.Deserialize(memoryStream);
+                    memoryStream.Close();
+                }
             }
         }
 
     }
-
 }
