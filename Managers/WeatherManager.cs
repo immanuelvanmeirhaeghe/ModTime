@@ -26,7 +26,8 @@ namespace ModTime.Managers
         public static WeatherManager Get() => Instance;
 
         protected virtual void Start()
-        {                    
+        {
+            InitData();
         }
 
         protected virtual void Update()
@@ -81,8 +82,24 @@ namespace ModTime.Managers
 
         public bool IsRainFallingNow()
         {
-            return LocalRainManager.IsRain();
+            if (IsModEnabled)
+            {
+                return LocalRainManager.IsRain();
+            }
+            return false;
         }
 
+        public string GetCurrentWeatherInfo()
+        {
+            try
+            {
+                return $"{(IsRainFallingNow() ? "Raining" : "Dry")} weather";
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, $"{nameof(StopRain)}");
+                return string.Empty;
+            }
+        }
     }
 }

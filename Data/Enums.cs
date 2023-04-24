@@ -23,8 +23,8 @@
     public enum TimeScaleModes
     {
         Normal = 0,
-        Fast = 1,
-        VeryFast = 2,       
+        Faster = 1,
+        Slower = 2,       
         Paused = 3,
         Custom = 4
     }

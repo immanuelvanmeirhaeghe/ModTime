@@ -90,9 +90,9 @@ namespace ModTime.Managers
 
         public NutrientsDepletion GetActiveNutrientsDepletionPreset()
         {
-            var _ActiveNutrientsDepletionPreset = DifficultySettings.ActivePreset.m_NutrientsDepletion;
-            ActiveNutrientsDepletionPreset = _ActiveNutrientsDepletionPreset;
-            return _ActiveNutrientsDepletionPreset;
+            var _activeNutrientsDepletionPreset = DifficultySettings.ActivePreset.m_NutrientsDepletion;
+            ActiveNutrientsDepletionPreset = _activeNutrientsDepletionPreset;
+            return _activeNutrientsDepletionPreset;
         }
 
         public bool SetActiveNutrientsDepletionPreset(int nutrientsDepletionIndex)
@@ -116,7 +116,8 @@ namespace ModTime.Managers
                         nutrientsDepletionPreset = NutrientsDepletion.High;
                         break;
                     default:
-                        nutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();                        
+                        nutrientsDepletionPreset = GetActiveNutrientsDepletionPreset();    
+                        
                         break;
                 }
                 ActiveNutrientsDepletionPreset = nutrientsDepletionPreset;
@@ -385,11 +386,7 @@ namespace ModTime.Managers
                     foreach (KeyValuePair<string, float> customconditionMul in customordered)
                     {
                         float mul = LocalMultipliers.GetCustomMultiplierValue(customconditionMul.Key);
-                        mul = CustomHorizontalSlider(customconditionMul.Value, 0f, customconditionMul.Value + 1f, customconditionMul.Key);
-                        if (GUI.changed)
-                        {
-                            LocalMultipliers.SetCustomNutritionMultiplierValue(customconditionMul.Key, mul);
-                        }
+                        mul = CustomHorizontalSlider(customconditionMul.Value, 0f, customconditionMul.Value + 1f, customconditionMul.Key);                       
                         curIdx++;
                     }
                 }
@@ -427,12 +424,11 @@ namespace ModTime.Managers
                     saveSettingsFileBinaryFormatter.Serialize(saveSettingsMemoryStream, LocalMultipliers.CustomNutritionMultipliers);
                     saveSettingsMemoryStream.Close();
                 }
-
                 return true;
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{nameof(SaveSettings)}");
+                HandleException(exc, nameof(SaveSettings));
                 return false;
             }
         }
@@ -474,12 +470,28 @@ namespace ModTime.Managers
                         }                       
                     }                  
                 }
+                ApplySettings();
                 return true;
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{nameof(LoadSettings)}");
+                HandleException(exc, nameof(LoadSettings));
                 return false;
+            }
+        }
+
+        private void ApplySettings()
+        {
+            try
+            {
+                foreach (var item in LocalMultipliers.CustomNutritionMultipliers)
+                {
+                    LocalMultipliers.SetCustomNutritionMultiplierValue(item.Key, item.Value);
+                }
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(ApplySettings));             
             }
         }
 

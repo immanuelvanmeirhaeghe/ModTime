@@ -186,7 +186,7 @@ namespace ModTime.Managers
             if (IsNight())
             {
                 skyCycle.DateTime.AddDays(1);
-                SetDayTime(skyCycle.Day, skyCycle.Month, skyCycle.Year, 5, 1);              
+                SetDayTime(skyCycle.Day + 1, skyCycle.Month, skyCycle.Year, 5, 1);              
                 return DayCycles.Daytime.ToString();
             }
             else
@@ -218,7 +218,7 @@ namespace ModTime.Managers
         {
             if (TimeScaleMode == TimeScaleModes.Normal)
             {
-                TimeScaleMode = TimeScaleModes.Fast;
+                TimeScaleMode = TimeScaleModes.Faster;
             }
             else
             {
@@ -230,13 +230,13 @@ namespace ModTime.Managers
 
         private void CycleTimeScaleSlowdown()
         {
-            if (TimeScaleMode == TimeScaleModes.VeryFast)
+            if (TimeScaleMode == TimeScaleModes.Slower)
             {
                 TimeScaleMode = TimeScaleModes.Normal;
             }
             else
             {
-                TimeScaleMode = TimeScaleModes.VeryFast;
+                TimeScaleMode = TimeScaleModes.Slower;
             }
             TimeScaleModeIndex = (int)TimeScaleMode;
             MainLevel.Instance.SetTimeScaleMode(TimeScaleModeIndex);
@@ -250,10 +250,10 @@ namespace ModTime.Managers
                     SelectedTimeScaleMode = TimeScaleModes.Normal;                   
                     break;
                 case 1:
-                    SelectedTimeScaleMode = TimeScaleModes.Fast;
+                    SelectedTimeScaleMode = TimeScaleModes.Faster;
                     break;
                 case 2:
-                    SelectedTimeScaleMode = TimeScaleModes.VeryFast;
+                    SelectedTimeScaleMode = TimeScaleModes.Slower;
                     break;
                 case 3:
                     SelectedTimeScaleMode = TimeScaleModes.Paused;
@@ -268,7 +268,7 @@ namespace ModTime.Managers
             SelectedTimeScaleModeIndex = (int)SelectedTimeScaleMode;
             TimeScaleMode = SelectedTimeScaleMode;
             TimeScaleModeIndex = SelectedTimeScaleModeIndex;
-            MainLevel.Instance.SetTimeScaleMode(TimeScaleModeIndex);
+            MainLevel.Instance.SetTimeScaleMode(mode);
         }
 
         public float GetSlowMotionFactor()
@@ -316,10 +316,10 @@ namespace ModTime.Managers
                 case TimeScaleModes.Normal:
                     factor = 1f;
                     break;
-                case TimeScaleModes.Fast:
+                case TimeScaleModes.Faster:
                     factor = 10f;
                     break;
-                case TimeScaleModes.VeryFast:
+                case TimeScaleModes.Slower:
                     factor = 0.1f;
                     break;
                 case TimeScaleModes.Paused:
@@ -344,17 +344,5 @@ namespace ModTime.Managers
         {
             return Time.timeScale;
         }
-
-        public float CustomHorizontalSlider(float sliderValue, float sliderMinValue, float sliderMaxValue, string labelText)
-        {
-            GUI.contentColor = DefaultContentColor;       
-            using (var sliderHScope = new GUILayout.HorizontalScope(GUI.skin.box))
-            {
-                GUILayout.Label($"{labelText} ({(float)System.Math.Round(sliderValue, 2, MidpointRounding.ToEven)})");
-                sliderValue = GUILayout.HorizontalSlider(sliderValue, sliderMinValue, sliderMaxValue);
-                return sliderValue;
-            }
-        }
-
     }
 }
