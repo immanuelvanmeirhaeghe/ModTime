@@ -15,10 +15,16 @@ namespace ModTime.Managers
     public class TimeManager : MonoBehaviour
     {
         private static TimeManager Instance;
-        private static Watch LocalWatch;
+      
         private static readonly string ModuleName = nameof(TimeManager);
+        private static Color DefaultColor = GUI.color;
+        private static Color DefaultContentColor = GUI.contentColor;
+        private static Color DefaultBackGroundColor = GUI.backgroundColor;
+
+        private static Watch LocalWatch;
+
         public bool UseDevice { get; set; } = false;
-        public bool EnableTimeHUD { get; set; } = false;
+        public bool IsHUDTimeEnabled { get; set; } = false;
         public string DayTimeScaleInMinutes { get; set; } = "20";
         public string NightTimeScaleInMinutes { get; set; } = "10";
 
@@ -63,9 +69,9 @@ namespace ModTime.Managers
         }
         public bool IsWatchInitialized { get; set; } = false;
         public bool WasPausedLastFrame { get; set; } = false;
+
         public int TimeScaleModeIndex { get; set; } = 0;
-        public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;
-        
+        public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;        
         public float TimeScaleFactor { get; set; } = 0f;
         public float SlowMotionFactor { get; set; } = 1f;
         private float WantedSlowMotionFactor { get; set; } = 1f;
@@ -84,23 +90,50 @@ namespace ModTime.Managers
             return Instance;
         }
 
-        private void Start()
+        protected virtual void Start()
         {
         }
 
-        private void Update()
+        protected virtual void Update()
         {
            if (IsModEnabled)
            {
                 InitData();
                 UpdateSlowMotion();
-                UpdateTimeScale();             
+                UpdateTimeScale();
+                UpdateCurentTimeInMinutes();
             }
         }
 
-        private void InitData()
+        protected virtual void InitData()
         {
             LocalWatch = Watch.Get();
+        }
+
+        protected virtual void UpdateSlowMotion()
+        {
+            if (SlowMotionFactor != WantedSlowMotionFactor)
+            {
+                float b = Time.unscaledTime - ChangeSlowMotionTime;
+                SlowMotionFactor = CJTools.Math.GetProportionalClamp(SlowMotionFactor, WantedSlowMotionFactor, b, 0f, 1f);
+            }
+        }
+
+        protected virtual void UpdateTimeScale()
+        {
+            MainLevel.Instance.UpdateTimeScale();
+        }
+
+        protected virtual void UpdateCurentTimeInMinutes()
+        {
+            var m_TODSky = MainLevel.Instance.m_TODSky;
+            CurentTimeInMinutes =
+                Mathf.Floor(m_TODSky.Cycle.Year - 2016) * 12f * 30f * 24f * 60f +
+                Mathf.Floor(m_TODSky.Cycle.Month) * 30f * 24f * 60f +
+                Mathf.Floor(m_TODSky.Cycle.Day) * 24f * 60f +
+                Mathf.Floor(m_TODSky.Cycle.Hour) * 60f +
+                m_TODSky.Cycle.DateTime.Minute +
+                m_TODSky.Cycle.DateTime.Second / 60f;
         }
 
         private void HandleException(Exception exc, string methodName)
@@ -181,7 +214,35 @@ namespace ModTime.Managers
             MainLevel.Instance.SetSlowMotionFactor(factor);
         }
 
-        public void SetTimeScaleMode(int mode)
+        private void CycleTimeScaleSpeedup()
+        {
+            if (TimeScaleMode == TimeScaleModes.Normal)
+            {
+                TimeScaleMode = TimeScaleModes.Fast;
+            }
+            else
+            {
+                TimeScaleMode = TimeScaleModes.Normal;
+            }
+            TimeScaleModeIndex = (int)TimeScaleMode;
+            MainLevel.Instance.SetTimeScaleMode(TimeScaleModeIndex);
+        }
+
+        private void CycleTimeScaleSlowdown()
+        {
+            if (TimeScaleMode == TimeScaleModes.VeryFast)
+            {
+                TimeScaleMode = TimeScaleModes.Normal;
+            }
+            else
+            {
+                TimeScaleMode = TimeScaleModes.VeryFast;
+            }
+            TimeScaleModeIndex = (int)TimeScaleMode;
+            MainLevel.Instance.SetTimeScaleMode(TimeScaleModeIndex);
+        }
+
+        public void SetSelectedTimeScaleMode(int mode)
         {
             switch (mode)
             {
@@ -189,10 +250,10 @@ namespace ModTime.Managers
                     SelectedTimeScaleMode = TimeScaleModes.Normal;                   
                     break;
                 case 1:
-                    SelectedTimeScaleMode = TimeScaleModes.Medium;
+                    SelectedTimeScaleMode = TimeScaleModes.Fast;
                     break;
                 case 2:
-                    SelectedTimeScaleMode = TimeScaleModes.High;
+                    SelectedTimeScaleMode = TimeScaleModes.VeryFast;
                     break;
                 case 3:
                     SelectedTimeScaleMode = TimeScaleModes.Paused;
@@ -219,39 +280,32 @@ namespace ModTime.Managers
             return SlowMotionFactor;
         }
 
-        private void UpdateSlowMotion()
-        {
-            if (SlowMotionFactor != WantedSlowMotionFactor)
-            {
-                float b = Time.unscaledTime - ChangeSlowMotionTime;
-                SlowMotionFactor = CJTools.Math.GetProportionalClamp(SlowMotionFactor, WantedSlowMotionFactor, b, 0f, 1f);
-            }
-        }
-
-        private void UpdateTimeScale()
-        {
-            MainLevel.Instance.UpdateTimeScale();
-        }
-
         public bool IsNight()
         {
             return MainLevel.Instance.IsNight();
         }
 
-        public string GetCurrentTime()
+        public float GetCurrentTimeInMinutes()
         {
-            TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;
-            float hh = skyCycle.Hour;
-            int mm = (int)((skyCycle.Hour - hh) * 60f);
-            string timeWatch = $"{(int)hh}:{mm:00}";
-            return $"{timeWatch}";
+            CurentTimeInMinutes = MainLevel.Instance.GetCurrentTimeMinutes();
+            return CurentTimeInMinutes;
         }
 
-        public string GetCurrentDate()
+        public string HUDTimeString()
+        {
+            TOD_Sky m_TODSky = MainLevel.Instance.m_TODSky;
+            float hh = m_TODSky.Cycle.Hour;
+            int mm = m_TODSky.Cycle.DateTime.Minute;
+            int ss = m_TODSky.Cycle.DateTime.Second;
+            string hudTimeString = $"{(int)hh}:{mm:00}:{ss:00}";
+            return $"{hudTimeString}";
+        }
+
+        public string HUDDateString()
         {
             TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;          
-            string dateWatch = $"{skyCycle.Year}-{ skyCycle.Month}-{skyCycle.Day}";
-            return $"{dateWatch}";
+            string hudDateString = $"{skyCycle.Year}-{ skyCycle.Month}-{skyCycle.Day}";
+            return $"{hudDateString}";
         }
 
         public float GetTimeScaleFactor(TimeScaleModes timeScaleMode)
@@ -262,10 +316,10 @@ namespace ModTime.Managers
                 case TimeScaleModes.Normal:
                     factor = 1f;
                     break;
-                case TimeScaleModes.Medium:
+                case TimeScaleModes.Fast:
                     factor = 10f;
                     break;
-                case TimeScaleModes.High:
+                case TimeScaleModes.VeryFast:
                     factor = 0.1f;
                     break;
                 case TimeScaleModes.Paused:
@@ -289,6 +343,17 @@ namespace ModTime.Managers
         public float GetTimeProgressSpeed()
         {
             return Time.timeScale;
+        }
+
+        public float CustomHorizontalSlider(float sliderValue, float sliderMinValue, float sliderMaxValue, string labelText)
+        {
+            GUI.contentColor = DefaultContentColor;       
+            using (var sliderHScope = new GUILayout.HorizontalScope(GUI.skin.box))
+            {
+                GUILayout.Label($"{labelText} ({(float)System.Math.Round(sliderValue, 2, MidpointRounding.ToEven)})");
+                sliderValue = GUILayout.HorizontalSlider(sliderValue, sliderMinValue, sliderMaxValue);
+                return sliderValue;
+            }
         }
 
     }

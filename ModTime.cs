@@ -49,51 +49,112 @@ namespace ModTime
         private static float HUDTimeScreenMinHeight { get; set; } = 300f;
         private static float HUDTimeScreenMaxWidth { get; set; } = 300f;
         private static float HUDTimeScreenMaxHeight { get; set; } = 300f;
-        private static float HUDTimeScreenStartPositionX { get; set; } = Screen.width / 3f;
-        private static float HUDTimeScreenStartPositionY { get; set; } = Screen.height / 3f;
+        private static float HUDTimeScreenStartPositionX { get; set; } = 0f;
+        private static float HUDTimeScreenStartPositionY { get; set; } = Screen.height - HUDTimeScreenTotalHeight - 75f;
         private static bool IsHUDTimeMinimized { get; set; }
         private static int HUDTimeScreenId { get; set; }
 
         private Color DefaultColor = GUI.color;
         private Color DefaultContentColor = GUI.contentColor;
         private Color DefaultBackGroundColor = GUI.backgroundColor;
-        public GUIStyle InfoHeaderLabel => new GUIStyle(GUI.skin.label)
+        private GUIStyle HeaderLabel => new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleCenter,
             fontStyle = FontStyle.Bold,
             fontSize = 12
         };
-        public GUIStyle InfoFieldNameLabel => new GUIStyle(GUI.skin.label)
+        private GUIStyle SubHeaderLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = HeaderLabel.alignment,
+            fontStyle = FontStyle.BoldAndItalic,
+            fontSize = HeaderLabel.fontSize - 1,
+        };
+        private GUIStyle FieldNameLabel => new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleLeft,
             fontSize = 12,
             stretchWidth = true,
-            wordWrap = true,
-            fontStyle = FontStyle.Italic
+            wordWrap = true            
         };
-        public GUIStyle InfoFieldValueLabel => new GUIStyle(GUI.skin.label)
+        private GUIStyle FieldValueLabel => new GUIStyle(GUI.skin.label)
         {
             alignment = TextAnchor.MiddleRight,
             fontSize = 12,
             stretchWidth = true,
             wordWrap = true
         };
-        public GUIStyle HUDTimeWatchLabel = new GUIStyle(GUI.skin.label)
+        private GUIStyle CommentLabel => new GUIStyle(GUI.skin.label)
         {
-            fontSize = 18,
-            alignment = TextAnchor.MiddleCenter,
-            fontStyle = FontStyle.Bold,
-            stretchWidth = true,
-            stretchHeight = true
+            alignment = TextAnchor.MiddleLeft,
+            fontStyle = FontStyle.Italic,
+            fontSize = GUI.skin.label.fontSize,
         };
-        public GUIStyle HUDTimeDateLabel = new GUIStyle(GUI.skin.label)
+        private GUIStyle TextLabel => new GUIStyle(GUI.skin.label)
         {
-            fontSize = 16,
-            alignment = TextAnchor.MiddleCenter,
-            fontStyle = FontStyle.Bold,
+            alignment = TextAnchor.MiddleLeft,
+            fontSize = GUI.skin.label.fontSize,
             stretchWidth = true,
-            stretchHeight = true
+            stretchHeight = true,
+            wordWrap = true
         };
+        private GUIStyle TextFieldLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleRight,
+            fontSize = GUI.skin.label.fontSize,
+            stretchWidth = true,
+            stretchHeight = true,
+            wordWrap = true
+        };
+        private GUIStyle TimeTextLabel => new GUIStyle(GUI.skin.label)
+        {
+            alignment = TextAnchor.MiddleLeft,
+            fontSize = GUI.skin.label.fontSize,
+            stretchWidth = true,
+            stretchHeight = true,
+            wordWrap = true
+        };
+
+        public GUIStyle ColoredCommentLabel(Color color)
+        {
+            GUIStyle style = CommentLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredFieldNameLabel(Color color)
+        {
+            GUIStyle style = FieldNameLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredFieldValueLabel(Color color)
+        {
+            GUIStyle style = FieldValueLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredToggleFieldValueLabel(bool enabled, Color enabledColor, Color disabledColor)
+        {
+            GUIStyle style = FieldValueLabel;
+            style.normal.textColor = enabled ? enabledColor : disabledColor;
+            return style;
+        }       
+
+        public GUIStyle ColoredHeaderLabel(Color color)
+        {
+            GUIStyle style = HeaderLabel;
+            style.normal.textColor = color;
+            return style;
+        }
+
+        public GUIStyle ColoredSubHeaderLabel(Color color)
+        {
+            GUIStyle style = SubHeaderLabel;
+            style.normal.textColor = color;
+            return style;
+        }
 
         private bool ShowModTime { get; set; } = false;
         private bool ShowDefaultMuls { get; set; } = false;
@@ -191,9 +252,8 @@ namespace ModTime
             }
         }
 
-        public KeyCode GetShortcutKey()
+        public KeyCode GetShortcutKey(string buttonID)
         {
-            string buttonID = nameof(ShortcutKey);
             var ConfigurableModList = GetModList();
             if (ConfigurableModList != null && ConfigurableModList.Count > 0)
             {
@@ -256,39 +316,15 @@ namespace ModTime
             }
         }
 
-        private void Start()
+        protected virtual void Start()
         {
             ModManager.ModManager.onPermissionValueChanged += ModManager_onPermissionValueChanged;
-            ShortcutKey = GetShortcutKey();
-        }
-
-        public GUIStyle ColoredToggleValueLabel(GUIStyle style, bool enabled)
-        {
-            style.normal.textColor = enabled ? Color.green : DefaultColor;
-            return style;
-        }
-
-        public GUIStyle ReColoredControl(float width, float height, GUIStyle style, Color textNormal, Color textActive, Color fillColor)
-        {
-            Color[] pixels = new Color[(int)(width * height)];
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = fillColor;
-            }
-            style.normal.textColor = textNormal;
-            style.active.textColor = textActive;
-            return style;
-        }
-
-        public GUIStyle ColoredHeaderLabel(GUIStyle style, Color color)
-        {
-            style.normal.textColor = color;
-            return style;
+            ShortcutKey = GetShortcutKey(nameof(ShortcutKey));
         }
 
         private void HandleException(Exception exc, string methodName)
         {
-            string info = $"[{ModName}:{methodName}] throws exception:\n{exc.Message}";
+            string info = $"[{ModName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
             Debug.Log(info);
             ShowHUDBigInfo(HUDBigInfoMessage(info, MessageType.Error, Color.red));
@@ -306,12 +342,12 @@ namespace ModTime
                             );
         }
 
-        public void ShowHUDBigInfo(string text)
+        public void ShowHUDBigInfo(string text, float duration = 3f)
         {
-            string header = ModName + " Info";
-            string textureName = HUDInfoLogTextureType.Reputation.ToString();
+            string header = $"{ModName} Info";
+            string textureName = HUDInfoLogTextureType.Count.ToString();
             HUDBigInfo obj = (HUDBigInfo)LocalHUDManager.GetHUD(typeof(HUDBigInfo));
-            HUDBigInfoData.s_Duration = 2f;
+            HUDBigInfoData.s_Duration = duration;
             HUDBigInfoData data = new HUDBigInfoData
             {
                 m_Header = header,
@@ -326,7 +362,8 @@ namespace ModTime
         public void ShowHUDInfoLog(string itemID, string localizedTextKey)
         {
             Localization localization = GreenHellGame.Instance.GetLocalization();
-            ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages))).AddMessage(localization.Get(localizedTextKey) + "  " + localization.Get(itemID));
+            var messages = ((HUDMessages)LocalHUDManager.GetHUD(typeof(HUDMessages)));
+            messages.AddMessage($"{localization.Get(localizedTextKey)}  {localization.Get(itemID)}");
         }
 
         private void EnableCursor(bool blockPlayer = false)
@@ -346,7 +383,7 @@ namespace ModTime
             }
         }
 
-        private void Update()
+        protected virtual void Update()
         {
             if (Input.GetKeyDown(ShortcutKey))
             {
@@ -359,38 +396,37 @@ namespace ModTime
                 if (!ShowModTime)
                 {
                     EnableCursor(false);
-                    EnableCursor(false);
                 }
             }           
         }
 
-        private void ToggleShowUI(int level)
+        private void ToggleShowUI(int controlId)
         {
-            switch (level)
+            switch (controlId)
             {
                 case 0:
                     ShowModTime = !ShowModTime;
-                    return;
+                    break;
                 case 1:
                     ShowDefaultMuls = !ShowDefaultMuls;
-                    return;
+                    break;
                 case 2:
                     ShowCustomMuls = !ShowCustomMuls;
-                    return;
+                    break;
                 case 3:
                     ShowModInfo = !ShowModInfo;
-                    return;
+                    break;
                 case 6:
                     ShowHUDTime = !ShowHUDTime;
-                    return;
+                    break;
                 default:
                     ShowModTime = !ShowModTime;
                     ShowDefaultMuls = !ShowDefaultMuls;
                     ShowCustomMuls = !ShowCustomMuls;
                     ShowModInfo = !ShowModInfo;
                     ShowHUDTime = !ShowHUDTime;
-                    return;
-            }
+                    break;
+            }          
         }
 
         private void OnGUI()
@@ -401,11 +437,11 @@ namespace ModTime
                 InitSkinUI();
                 if (ShowModTime)
                 {
-                    InitModTimeWindow();
+                    ShowModTimeWindow();
                 }
                 if (ShowHUDTime)
                 {
-                    InitHUDTimeWindow();
+                    ShowHUDTimeWindow();
                 }
             }
         }
@@ -424,14 +460,14 @@ namespace ModTime
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void InitModTimeWindow()
+        private void ShowModTimeWindow()
         {
             if (ModTimeScreenId < 0 || ModTimeScreenId == HUDTimeScreenId)
             {
                 ModTimeScreenId = GetHashCode();
             }
-            string modWindowTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
-            ModTimeScreen = GUILayout.Window(ModTimeScreenId, ModTimeScreen, InitModTimeScreen, modWindowTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModTimeScreenMinWidth), GUILayout.MaxWidth(ModTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModTimeScreenMinHeight), GUILayout.MaxHeight(ModTimeScreenMaxHeight));
+            string modTimeScreenTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
+            ModTimeScreen = GUILayout.Window(ModTimeScreenId, ModTimeScreen, InitModTimeScreen, modTimeScreenTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModTimeScreenMinWidth), GUILayout.MaxWidth(ModTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModTimeScreenMinHeight), GUILayout.MaxHeight(ModTimeScreenMaxHeight));
         }
 
         private void ScreenMenuBox()
@@ -464,17 +500,17 @@ namespace ModTime
                 ModTimeScreen = new Rect(ModTimeScreenStartPositionX, ModTimeScreenStartPositionY, ModTimeScreenTotalWidth, ModTimeScreenTotalHeight);
                 IsModTimeMinimized = false;
             }
-            InitModTimeWindow();
+            ShowModTimeWindow();
         }
 
-        private void InitHUDTimeWindow()
+        private void ShowHUDTimeWindow()
         {
             if (HUDTimeScreenId < 0 || HUDTimeScreenId == ModTimeScreenId)
             {
                 HUDTimeScreenId = GetHashCode() + 1;
             }
-            string hudWindowTitle = $"HUD Time";
-            HUDTimeScreen = GUILayout.Window(HUDTimeScreenId, HUDTimeScreen, InitHUDTimeScreen, hudWindowTitle, GUI.skin.label, GUILayout.ExpandWidth(true), GUILayout.MinWidth(HUDTimeScreenMinWidth), GUILayout.MaxWidth(HUDTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(HUDTimeScreenMinHeight), GUILayout.MaxHeight(HUDTimeScreenMaxHeight));
+            string hudTimeScreenTitle = $"HUD Time";
+            HUDTimeScreen = GUILayout.Window(HUDTimeScreenId, HUDTimeScreen, InitHUDTimeScreen, hudTimeScreenTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(HUDTimeScreenMinWidth), GUILayout.MaxWidth(HUDTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(HUDTimeScreenMinHeight), GUILayout.MaxHeight(HUDTimeScreenMaxHeight));
         }
 
         private void CollapseHUDTimeWindow()
@@ -493,7 +529,7 @@ namespace ModTime
                 HUDTimeScreen = new Rect(HUDTimeScreenStartPositionX, HUDTimeScreenStartPositionY, HUDTimeScreenTotalWidth, HUDTimeScreenTotalHeight);
                 IsHUDTimeMinimized = false;
             }
-            InitHUDTimeWindow();
+            ShowHUDTimeWindow();
         }
 
         private void CloseWindow()
@@ -508,9 +544,9 @@ namespace ModTime
             HUDTimeScreenStartPositionX = HUDTimeScreen.x;
             HUDTimeScreenStartPositionY = HUDTimeScreen.y;
             HUDTimeScreenTotalWidth = HUDTimeScreen.width;
-
+            GUI.backgroundColor = Color.clear;
             using (var timehudContentScope = new GUILayout.VerticalScope(GUI.skin.box))
-            {
+            {              
                 HUDTimeMenuBox();
 
                 if (!IsHUDTimeMinimized)
@@ -518,17 +554,20 @@ namespace ModTime
                     HUDTimeViewBox();
                 }
             }
+
+            GUI.backgroundColor = DefaultBackGroundColor;
+
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
         private void HUDTimeViewBox()
         {
-            using (var positionScope = new GUILayout.VerticalScope(ReColoredControl( 300f, 300f, GUI.skin.box, DefaultColor, Color.yellow, Color.clear)))
+            using (new GUILayout.VerticalScope(GUI.skin.label))
             {
-                GUIContent timeWatch = new GUIContent($"{LocalTimeManager.GetCurrentTime()}.");
-                GUIContent dateWatch = new GUIContent($"{LocalTimeManager.GetCurrentDate()}.");
-                GUILayout.Label(timeWatch, ColoredHeaderLabel(HUDTimeWatchLabel, Color.yellow));
-                GUILayout.Label(dateWatch, ColoredHeaderLabel(HUDTimeDateLabel, Color.green));
+                GUIContent timeContent = new GUIContent($"{LocalTimeManager.HUDTimeString()}.");
+                GUIContent dateContent = new GUIContent($"{LocalTimeManager.HUDDateString()}.");
+                GUILayout.Label(timeContent, HeaderLabel);
+                GUILayout.Label(dateContent, HeaderLabel);
             }                
         }
 
@@ -552,13 +591,14 @@ namespace ModTime
             ModTimeScreenStartPositionY = ModTimeScreen.y;
             ModTimeScreenTotalWidth = ModTimeScreen.width;
 
+            GUI.backgroundColor = DefaultBackGroundColor;
             using (var modContentScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
                ScreenMenuBox();
 
                 if (!IsModTimeMinimized)
                 {
-                    ModOptionsBox();
+                    ModTimeManagerBox();
                     WeatherManagerBox();
                     TimeManagerBox();
                     HealthManagerBox();
@@ -571,8 +611,10 @@ namespace ModTime
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
-                GUILayout.Label($"Health Manager", ColoredHeaderLabel(InfoHeaderLabel, Color.yellow));
-                
+                GUILayout.Label($"Health Manager", ColoredHeaderLabel(Color.yellow));
+
+                GUILayout.Label($"Health Options", ColoredSubHeaderLabel(Color.cyan));
+
                 NutrientsSettingsBox();
                 ConditionMultipliersBox();                
             }
@@ -580,7 +622,7 @@ namespace ModTime
             {
                 using (var enablehmmulboxscope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To use, please enable health manager in the options above.", ColoredHeaderLabel(InfoHeaderLabel, Color.yellow));
+                    GUILayout.Label($"To use, please enable health manager in the options above.", ColoredCommentLabel(Color.yellow));
                 }
             }
         }
@@ -591,19 +633,21 @@ namespace ModTime
             {
                 using (var timemngboxscope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Time Manager", ColoredHeaderLabel(InfoFieldNameLabel, Color.yellow));
-                 
+                    GUILayout.Label($"Time Manager", ColoredHeaderLabel(Color.yellow));
+
+                    GUILayout.Label($"Time Options", ColoredSubHeaderLabel(Color.cyan));
+
                     DayTimeScalesBox();
                     DayCycleBox();
                     TimeScalesBox();
-                    WatchOptionBox();
+                    ShowHUDTimeOptionBox();
                 }
             }
             else
             {
                 using (var enabletimemngboxscope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"To use, please enable time manager in the options above.", ColoredHeaderLabel(InfoFieldNameLabel, Color.yellow));
+                    GUILayout.Label($"To use, please enable time manager in the options above.", ColoredCommentLabel(Color.yellow));
                 }
             }
         }
@@ -614,9 +658,9 @@ namespace ModTime
             {
                 using (var weathermngrScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Weather Manager", ColoredHeaderLabel(InfoFieldNameLabel, Color.yellow));
+                    GUILayout.Label($"Weather Manager", ColoredHeaderLabel(Color.yellow));
                     
-                    GUILayout.Label($"Weather Options", ColoredHeaderLabel(InfoFieldNameLabel, Color.cyan));
+                    GUILayout.Label($"Weather Options", ColoredSubHeaderLabel(Color.cyan));
 
                     RainOption();
                 }
@@ -625,18 +669,20 @@ namespace ModTime
             {
                 using (var enablelweatherboxscope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Enable weather manager in the {ModName} options.", ColoredHeaderLabel(InfoFieldNameLabel, Color.yellow));                    
+                    GUILayout.Label($"To use, please enable weather manager in the options above.", ColoredCommentLabel(Color.yellow));                    
                 }
             }
         }
 
-        private void ModOptionsBox()
+        private void ModTimeManagerBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
                 using (var modOptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{ModName} Options", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                    GUILayout.Label($"{ModName} Manager", ColoredHeaderLabel(Color.yellow));
+
+                    GUILayout.Label($"{ModName} Options", ColoredSubHeaderLabel(Color.cyan));
 
                     using (var optionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                     {
@@ -669,44 +715,44 @@ namespace ModTime
         {
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
-                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(100f));
+                ModInfoScrollViewPosition = GUILayout.BeginScrollView(ModInfoScrollViewPosition, GUI.skin.scrollView, GUILayout.MinHeight(150f));
 
-                GUILayout.Label("Mod info", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label("Mod Info", ColoredSubHeaderLabel(Color.cyan));
 
                 using (var gidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IConfigurableMod.GameID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.GameID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.GameID)}:", FieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.GameID}", FieldValueLabel);
                 }
                 using (var midScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IConfigurableMod.ID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.ID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.ID)}:", FieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.ID}", FieldValueLabel);
                 }
                 using (var uidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IConfigurableMod.UniqueID)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.UniqueID}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.UniqueID)}:", FieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.UniqueID}", FieldValueLabel);
                 }
                 using (var versionScope = new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"{nameof(IConfigurableMod.Version)}:", InfoFieldNameLabel);
-                    GUILayout.Label($"{SelectedMod.Version}", InfoFieldValueLabel);
+                    GUILayout.Label($"{nameof(IConfigurableMod.Version)}:", FieldNameLabel);
+                    GUILayout.Label($"{SelectedMod.Version}", FieldValueLabel);
                 }
 
-                GUILayout.Label("Mod buttons info", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label("Buttons Info", ColoredSubHeaderLabel(Color.cyan));
 
                 foreach (var configurableModButton in SelectedMod.ConfigurableModButtons)
                 {
                     using (var btnidScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(IConfigurableModButton.ID)}:", InfoFieldNameLabel);
-                        GUILayout.Label($"{configurableModButton.ID}", InfoFieldValueLabel);
+                        GUILayout.Label($"{nameof(IConfigurableModButton.ID)}:", FieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.ID}", FieldValueLabel);
                     }
                     using (var btnbindScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"{nameof(IConfigurableModButton.KeyBinding)}:", InfoFieldNameLabel);
-                        GUILayout.Label($"{configurableModButton.KeyBinding}", InfoFieldValueLabel);
+                        GUILayout.Label($"{nameof(IConfigurableModButton.KeyBinding)}:", FieldNameLabel);
+                        GUILayout.Label($"{configurableModButton.KeyBinding}", FieldValueLabel);
                     }
                 }
 
@@ -720,13 +766,10 @@ namespace ModTime
             {
                 using (var multiplayeroptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUI.color = Color.yellow;
-                    GUILayout.Label("Multiplayer options:", GUI.skin.label);                    
                     string multiplayerOptionMessage = string.Empty;
-                    GUI.color = DefaultColor;
+                    GUILayout.Label("Multiplayer Info", ColoredSubHeaderLabel(Color.cyan));
                     if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
                     {
-                        GUI.color = Color.green;
                         if (IsModActiveForSingleplayer)
                         {
                             multiplayerOptionMessage = $"you are the game host";
@@ -735,12 +778,15 @@ namespace ModTime
                         {
                             multiplayerOptionMessage = $"the game host allowed usage";
                         }
-                        _ = GUILayout.Toggle(true, PermissionChangedMessage($"granted", multiplayerOptionMessage), GUI.skin.toggle);
-                        GUI.color = DefaultColor;
+                   
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
+                        {
+                            GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}:", ColoredFieldNameLabel(DefaultColor));
+                            GUILayout.Label($"{PermissionChangedMessage($"granted", multiplayerOptionMessage)}", ColoredToggleFieldValueLabel(true, Color.green, Color.yellow));
+                        }
                     }
                     else
                     {
-                        GUI.color = Color.yellow;
                         if (!IsModActiveForSingleplayer)
                         {
                             multiplayerOptionMessage = $"you are not the game host";
@@ -749,8 +795,12 @@ namespace ModTime
                         {
                             multiplayerOptionMessage = $"the game host did not allow usage";
                         }
-                        _ = GUILayout.Toggle(false, PermissionChangedMessage($"revoked", $"{multiplayerOptionMessage}"), GUI.skin.toggle);
-                        GUI.color = DefaultColor;
+                      
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
+                        {
+                            GUILayout.Label($"{nameof(IsModActiveForMultiplayer)}:", ColoredFieldNameLabel(DefaultColor));
+                            GUILayout.Label($"{PermissionChangedMessage($"revoked", multiplayerOptionMessage)}", ColoredToggleFieldValueLabel(false, Color.green, Color.yellow));
+                        }
                     }                  
                 }
             }
@@ -762,19 +812,38 @@ namespace ModTime
 
         private void RainOption()
         {
+            bool _rainFallingNow = false;
             try
             {
-                bool _tRainEnabled = LocalWeatherManager.IsRainEnabled;
-                LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, "Switch between raining or dry weather?", GUI.skin.toggle);
-                if (_tRainEnabled != LocalWeatherManager.IsRainEnabled)
+                _rainFallingNow = LocalWeatherManager.IsRainFallingNow();
+                using (new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    if (LocalWeatherManager.IsRainEnabled)
+                    GUILayout.Label("Weather Info", ColoredSubHeaderLabel(Color.cyan));
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        LocalWeatherManager.StartRain();
+                        GUILayout.Label($"Current {nameof(LocalWeatherManager.IsRainEnabled)} setting: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalWeatherManager.IsRainEnabled}", ColoredToggleFieldValueLabel(LocalWeatherManager.IsRainEnabled, Color.cyan, Color.cyan));
                     }
-                    else
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        LocalWeatherManager.StopRain();
+                        GUILayout.Label($"Current: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{(_rainFallingNow ?"raining" : "dry")} weather", ColoredFieldValueLabel(Color.cyan));
+                    }
+
+                    GUILayout.Label($"Change to raining or dry weather using this setting.", TextLabel);
+
+                    bool _tRainEnabled = LocalWeatherManager.IsRainEnabled;
+                    LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch to {(_rainFallingNow ? "dry" : "raining" )} weather?", GUI.skin.toggle);
+                    if (_tRainEnabled != LocalWeatherManager.IsRainEnabled)
+                    {
+                        if (LocalWeatherManager.IsRainEnabled)
+                        {
+                           _ = LocalWeatherManager.StartRain();
+                        }
+                        else
+                        {
+                            _ = LocalWeatherManager.StopRain();
+                        }
                     }
                 }
             }
@@ -784,17 +853,24 @@ namespace ModTime
             }
         }
 
-        private void WatchOptionBox()
+        private void ShowHUDTimeOptionBox()
         {
             try
             {
                 using (var gtimeoptionsScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Time Options", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                    GUILayout.Label("HUD Time Info", ColoredSubHeaderLabel(Color.cyan));
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"Current {nameof(LocalTimeManager.IsHUDTimeEnabled)} setting: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalTimeManager.IsHUDTimeEnabled}", ColoredToggleFieldValueLabel(LocalTimeManager.IsHUDTimeEnabled, Color.cyan, Color.cyan));
+                    }
 
-                    bool _enableTimeHUD = LocalTimeManager.EnableTimeHUD;
-                    LocalTimeManager.EnableTimeHUD = GUILayout.Toggle(LocalTimeManager.EnableTimeHUD, $"Enable the time HUD?", GUI.skin.toggle);
-                    if (_enableTimeHUD != LocalTimeManager.EnableTimeHUD)
+                    GUILayout.Label($"Show or hide the time HUD using this setting.", TextLabel);
+
+                    bool _enableTimeHUD = LocalTimeManager.IsHUDTimeEnabled;
+                    LocalTimeManager.IsHUDTimeEnabled = GUILayout.Toggle(LocalTimeManager.IsHUDTimeEnabled, $"{(LocalTimeManager.IsHUDTimeEnabled ? "Hide" : "Show")} time HUD?", GUI.skin.toggle);
+                    if (_enableTimeHUD != LocalTimeManager.IsHUDTimeEnabled)
                     {
                         ToggleShowUI(6);
                     }
@@ -802,7 +878,7 @@ namespace ModTime
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(WatchOptionBox));
+                HandleException(exc, nameof(ShowHUDTimeOptionBox));
             }
         }
 
@@ -848,15 +924,20 @@ namespace ModTime
             {
                 using (var timeofdayBoxScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Current time of day: {(LocalTimeManager.IsNight() ? "night time" : "daytime")}", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
-
-                    GUILayout.Label("Please note that the time skipped has an impact on player condition! Enable health manager for more info.", ColoredHeaderLabel(InfoHeaderLabel, Color.yellow));
-
-                    GUILayout.Label("Go fast forward to the next daytime or night time cycle:", GUI.skin.label);
-                    using (var actbutScopeView = new GUILayout.HorizontalScope(GUI.skin.box))
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"To set game time to {( LocalTimeManager.IsNight( ) ? "daytime" : "night time")}, click", GUI.skin.label);
-                        if (GUILayout.Button("FFW >>", GUI.skin.button, GUILayout.MaxWidth(50f)))
+                        GUILayout.Label($"Current time of day setting: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{(LocalTimeManager.IsNight() ? "night time" : "daytime")}", ColoredFieldValueLabel(Color.cyan));
+                    }
+
+                    GUILayout.Label("Please note that the time skipped has an impact on player condition! Enable health manager for more info.", ColoredCommentLabel(Color.yellow));
+
+                    GUILayout.Label("Go fast forward to the next daytime or night time cycle:",TextLabel);
+
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"To set game time to {( LocalTimeManager.IsNight( ) ? "daytime" : "night time")}, click", TextLabel);
+                        if (GUILayout.Button("FFW >>", GUI.skin.button, GUILayout.Width(150f)))
                         {
                             OnClickFastForwardDayCycleButton();
                         }
@@ -875,16 +956,26 @@ namespace ModTime
             {
                 using (var timescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Current daytime length: {LocalTimeManager.DayTimeScaleInMinutes} and night time length: {LocalTimeManager.NightTimeScaleInMinutes} ", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
-
-                    GUILayout.Label("Change scales for in-game day - and night time length in real-life minutes. To set, click [Apply]", GUI.skin.label);
-                    using (var timescalesInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label("Daytime length: ", GUI.skin.label);
-                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes, GUI.skin.textField);
-                        GUILayout.Label("Night time length: ", GUI.skin.label);
-                        LocalTimeManager.NightTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.NightTimeScaleInMinutes, GUI.skin.textField);
-                        if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.MaxWidth(50f)))
+                        GUILayout.Label($"Current {nameof(LocalTimeManager.DayTimeScaleInMinutes)}", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalTimeManager.DayTimeScaleInMinutes}", ColoredFieldValueLabel(Color.cyan));
+                    }
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"Current {nameof(LocalTimeManager.NightTimeScaleInMinutes)}: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalTimeManager.NightTimeScaleInMinutes}", ColoredFieldValueLabel(Color.cyan));
+                    }
+
+                    GUILayout.Label("Change scales for in-game day - and night time length in real-life minutes. To set, click [Apply]", TextLabel);
+
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label("Daytime length: ", TextLabel);
+                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes, TextLabel);
+                        GUILayout.Label("Night time length: ", TextLabel);
+                        LocalTimeManager.NightTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.NightTimeScaleInMinutes, TextLabel);
+                        if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(200f)))
                         {
                             OnClickSetTimeScalesButton();
                         }
@@ -903,12 +994,22 @@ namespace ModTime
             {
                 using (var ctimescalesScope = new GUILayout.VerticalScope(GUI.skin.box))
                 {
-                    GUILayout.Label($"Current time progress speed = {LocalTimeManager.GetTimeProgressSpeed()} = Time scale factor * slowmotion factor = {LocalTimeManager.GetTimeScaleFactor(LocalTimeManager.SelectedTimeScaleMode)} * {LocalTimeManager.GetSlowMotionFactor()}", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"Current time progress speed =", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalTimeManager.GetTimeProgressSpeed()}", ColoredFieldValueLabel(Color.cyan));
+                    }
+                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    {
+                        GUILayout.Label($"Time scale factor * slowmotion factor =", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"{LocalTimeManager.GetTimeScaleFactor(LocalTimeManager.SelectedTimeScaleMode)} * {LocalTimeManager.GetSlowMotionFactor()}", ColoredFieldValueLabel(Color.cyan));
+                    }
 
                     string[] timeScaleModes = LocalTimeManager.GetTimeScaleModes();
                     int _selectedTimeScaleModeIndex = LocalTimeManager.SelectedTimeScaleModeIndex;
 
-                    GUILayout.Label("Choose a time scale mode. Click [Apply]", GUI.skin.label);
+                    GUILayout.Label("Choose a time scale mode. Click [Apply]", TextLabel);
+
                     using (var timemodeInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         LocalTimeManager.SelectedTimeScaleModeIndex = GUILayout.SelectionGrid(LocalTimeManager.SelectedTimeScaleModeIndex, timeScaleModes, timeScaleModes.Length, GUI.skin.button);
@@ -919,13 +1020,14 @@ namespace ModTime
                         }
                         if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(150f)))
                         {
-                            LocalTimeManager.SetTimeScaleMode(LocalTimeManager.SelectedTimeScaleModeIndex);
+                            LocalTimeManager.SetSelectedTimeScaleMode(LocalTimeManager.SelectedTimeScaleModeIndex);
                         }                       
                     }
                     if (LocalTimeManager.SelectedTimeScaleMode == TimeScaleModes.Custom)
                     {
-                        GUILayout.Label($"Set a slowmotion factor. Click [Apply]", GUI.skin.label);
-                        LocalTimeManager.SlowMotionFactor = UIControlManager.CustomHorizontalSlider(LocalTimeManager.SlowMotionFactor, 0f, 1f, "Factor");
+                        GUILayout.Label($"Set a slowmotion factor. Click [Apply]", TextLabel);
+
+                        LocalTimeManager.SlowMotionFactor = LocalTimeManager.CustomHorizontalSlider(LocalTimeManager.SlowMotionFactor, 0f, 1f, "Factor");
                         if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(150f)))
                         {
                             LocalTimeManager.SetSlowMotionFactor(LocalTimeManager.SlowMotionFactor);
@@ -956,14 +1058,18 @@ namespace ModTime
             using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
             {
                 string activeDepletionSetToMessage = $"Current active nutrients depletion preset: {LocalHealthManager.ActiveNutrientsDepletionPreset}";
-                GUILayout.Label(activeDepletionSetToMessage, ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"Current{nameof(LocalHealthManager.ActiveNutrientsDepletionPreset)}:", ColoredFieldNameLabel(Color.cyan));
+                    GUILayout.Label($"{LocalHealthManager.ActiveNutrientsDepletionPreset}", ColoredFieldValueLabel(Color.cyan));
+                }
 
                 string[] depletionPresets = LocalHealthManager.GetNutrientsDepletionNames();
                 int _selectedActiveNutrientsDepletionPresetIndex = LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex;          
 
-                GUILayout.Label("Choose a nutrients depletion preset. Click [Apply]", GUI.skin.label);
+                GUILayout.Label("Choose a nutrients depletion preset. Click [Apply]", TextLabel);
              
-                using (var apsInputScope = new GUILayout.HorizontalScope(GUI.skin.box))
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
                     LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex = GUILayout.SelectionGrid(LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex, depletionPresets, depletionPresets.Length, GUI.skin.button);
                     if (_selectedActiveNutrientsDepletionPresetIndex != LocalHealthManager.SelectedActiveNutrientsDepletionPresetIndex)
@@ -984,7 +1090,6 @@ namespace ModTime
                         }
                     }                  
                 }
-
             }
         }
 
@@ -992,14 +1097,14 @@ namespace ModTime
         {
             using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
             {
-                GUILayout.Label($"Avoid any player condition depletion!", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
+                GUILayout.Label($"Avoid any player condition depletion!",TextLabel);
                 ConditionParameterLossOption();
 
-                GUILayout.Label($"Choose which condition multipliers to use:", ColoredHeaderLabel(InfoHeaderLabel, Color.cyan));
-                GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredHeaderLabel(InfoHeaderLabel, Color.yellow));
+                GUILayout.Label($"Choose which condition multipliers to use:", TextLabel);
+                GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredCommentLabel(Color.yellow));
                 ConditionOption();
 
-                using (var ftftftScope = new GUILayout.VerticalScope(GUI.skin.box))
+                using (new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     if (GUILayout.Button($"Default multipliers"))
                     {
@@ -1020,43 +1125,46 @@ namespace ModTime
                     }
                 }
 
-                if (GUILayout.Button("Apply", GUI.skin.button))
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
                 {
-                    if (LocalHealthManager.IsParameterLossBlocked)
+                    if (GUILayout.Button("Apply", GUI.skin.button))
                     {
-                        LocalHealthManager.BlockParametersLoss();
-                    }
-                    else
-                    {
-                        LocalHealthManager.UnblockParametersLoss();
-                    }
-                    ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
+                        if (LocalHealthManager.IsParameterLossBlocked)
+                        {
+                            LocalHealthManager.BlockParametersLoss();
+                        }
+                        else
+                        {
+                            LocalHealthManager.UnblockParametersLoss();
+                        }
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
 
-                    LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
-                    ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
-                }
-                if (GUILayout.Button("Save settings"))
-                {
-                    bool saved = LocalHealthManager.SaveSettings();
-                    if (saved)
-                    {
-                        ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
+                        LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
+                        ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
                     }
-                    else
+                    if (GUILayout.Button("Save settings", GUI.skin.button))
                     {
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
+                        bool saved = LocalHealthManager.SaveSettings();
+                        if (saved)
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
+                        }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
+                        }
                     }
-                }
-                if (GUILayout.Button("Load settings"))
-                {
-                    bool loaded = LocalHealthManager.LoadSettings();
-                    if (loaded)
+                    if (GUILayout.Button("Load settings", GUI.skin.button))
                     {
-                        ShowHUDBigInfo(HUDBigInfoMessage("Loaded", MessageType.Info, Color.green));
-                    }
-                    else
-                    {
-                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not load settings", MessageType.Warning, Color.yellow));
+                        bool loaded = LocalHealthManager.LoadSettings();
+                        if (loaded)
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage("Loaded", MessageType.Info, Color.green));
+                        }
+                        else
+                        {
+                            ShowHUDBigInfo(HUDBigInfoMessage($"Could not load settings", MessageType.Warning, Color.yellow));
+                        }
                     }
                 }
             }

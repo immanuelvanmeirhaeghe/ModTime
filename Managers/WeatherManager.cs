@@ -15,6 +15,8 @@ namespace ModTime.Managers
         public bool IsRainEnabled { get; set; } = false;
         public bool IsModEnabled { get; set; } = false;
 
+        public bool WeatherStateRaining { get; set; } = false;
+
         public WeatherManager()
         {
             useGUILayout = true;
@@ -23,11 +25,11 @@ namespace ModTime.Managers
 
         public static WeatherManager Get() => Instance;
 
-        public void Start()
+        protected virtual void Start()
         {                    
         }
 
-        public void Update()
+        protected virtual void Update()
         {
           if (IsModEnabled)
           {
@@ -35,15 +37,16 @@ namespace ModTime.Managers
             }
         }
 
-        private void InitData()
+        protected virtual void InitData()
         {
             LocalRainManager = RainManager.Get();
         }
 
         private void HandleException(Exception exc, string methodName)
         {
-            string info = $"[{ModuleName}:{methodName}] throws exception:\n{exc}";
+            string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
+            Debug.Log(info);
         }
 
         public bool StartRain()
@@ -56,7 +59,7 @@ namespace ModTime.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{ModuleName}:{nameof(StartRain)}");
+                HandleException(exc,nameof(StartRain));
                 return false;
             }
         }
@@ -71,9 +74,14 @@ namespace ModTime.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{ModuleName}:{nameof(StopRain)}");
+                HandleException(exc, $"{nameof(StopRain)}");
                 return false;
             }
+        }
+
+        public bool IsRainFallingNow()
+        {
+            return LocalRainManager.IsRain();
         }
 
     }

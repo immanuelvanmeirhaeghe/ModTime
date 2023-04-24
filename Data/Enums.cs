@@ -19,11 +19,21 @@
         Daytime,
         Night
     }
+
     public enum TimeScaleModes
     {
         Normal = 0,
+        Fast = 1,
+        VeryFast = 2,       
+        Paused = 3,
+        Custom = 4
+    }
+
+    public enum TimeScaleFactor
+    {
+        Normal = 0,
         Medium = 1,
-        High = 2,       
+        High = 2,
         Paused = 3,
         Custom = 4
     }

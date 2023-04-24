@@ -336,7 +336,6 @@
     <Compile Include="Extensions\PlayerExtended.cs" />
     <Compile Include="Managers\HealthManager.cs" />
     <Compile Include="Managers\TimeManager.cs" />
-    <Compile Include="Managers\UIControlManager.cs" />
     <Compile Include="Managers\WeatherManager.cs" />
     <Compile Include="ModTime.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
