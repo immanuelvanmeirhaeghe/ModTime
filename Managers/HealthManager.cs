@@ -12,6 +12,7 @@ using UnityEngine;
 using static GameSettings;
 using UnityStandardAssets.ImageEffects;
 using static Unity.IO.LowLevel.Unsafe.AsyncReadManagerMetrics;
+using static Mono.Security.X509.X520;
 
 namespace ModTime.Managers
 {
@@ -41,6 +42,8 @@ namespace ModTime.Managers
         public bool IsParameterLossBlocked { get; set; } = false;
         public int ActiveNutrientsDepletionPresetIndex { get; set; }
         public NutrientsDepletion ActiveNutrientsDepletionPreset { get; set; }
+        public Dictionary<string, float> CustomMultipliers { get; set; }
+        public Dictionary<string, float> DefaultMultipliers { get; set; }
 
         public HealthManager()
         {
@@ -292,38 +295,38 @@ namespace ModTime.Managers
                 float num4 = 1f;
                 if (LocalFPPController.IsRunning())
                 {
-                    num2 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionRunMul));
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionRunMul));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionRunMul));
+                    num2 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionRunMul));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionRunMul));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionRunMul));
                 }
                 if (flag)
                 {
-                    num2 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionActionMul));
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionActionMul));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionActionMul));
+                    num2 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionActionMul));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionActionMul));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionActionMul));
                 }
                 if (LocalPlayerConditionModule.IsNutritionCarboCriticalLevel())
                 {
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionMulNoCarbs));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionMulNoCarbs));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionMulNoCarbs));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionMulNoCarbs));
                 }
                 if (InventoryBackpack.Get().IsCriticalOverload())
                 {
-                    num2 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightCriticalMul));
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightCriticalMul));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightCriticalMul));
+                    num2 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightCriticalMul));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightCriticalMul));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightCriticalMul));
                 }
                 else if (InventoryBackpack.Get().IsOverload())
                 {
-                    num2 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightOverloadMul));
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightOverloadMul));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightOverloadMul));
+                    num2 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightOverloadMul));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightOverloadMul));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightOverloadMul));
                 }
                 else
                 {
-                    num2 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightNormalMul));
-                    num3 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightNormalMul));
-                    num4 *= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightNormalMul));
+                    num2 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionWeightNormalMul));
+                    num3 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionWeightNormalMul));
+                    num4 *= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionWeightNormalMul));
                 }
                 if (m_ParasiteSickness.IsActive())
                 {
@@ -350,11 +353,11 @@ namespace ModTime.Managers
                             break;
                         }
                 }
-                LocalPlayerConditionModule.m_NutritionCarbo -= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionPerSecond)) * num * num2 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_CarboConsumptionMul : 1f);
+                LocalPlayerConditionModule.m_NutritionCarbo -= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionCarbohydratesConsumptionPerSecond)) * num * num2 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_CarboConsumptionMul : 1f);
                 LocalPlayerConditionModule.m_NutritionCarbo = Mathf.Clamp(LocalPlayerConditionModule.GetNutritionCarbo(), 0f, LocalPlayerConditionModule.GetMaxNutritionCarbo());
-                LocalPlayerConditionModule.m_NutritionFat -= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionPerSecond)) * num * num3 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_FatConsumptionMul : 1f);
+                LocalPlayerConditionModule.m_NutritionFat -= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionFatConsumptionPerSecond)) * num * num3 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_FatConsumptionMul : 1f);
                 LocalPlayerConditionModule.m_NutritionFat = Mathf.Clamp(LocalPlayerConditionModule.GetNutritionFat(), 0f, LocalPlayerConditionModule.GetMaxNutritionFat());
-                LocalPlayerConditionModule.m_NutritionProteins -= LocalMultipliers.GetCustomMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionPerSecond)) * num * num4 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_ProteinsConsumptionMul : 1f);
+                LocalPlayerConditionModule.m_NutritionProteins -= GetCustomNutritionMultiplierValue(nameof(Multipliers.m_NutritionProteinsConsumptionPerSecond)) * num * num4 * (LocalPlayerCocaineModule.m_Active ? LocalPlayerCocaineModule.m_ProteinsConsumptionMul : 1f);
                 LocalPlayerConditionModule.m_NutritionProteins = Mathf.Clamp(LocalPlayerConditionModule.GetNutritionProtein(), 0f, LocalPlayerConditionModule.GetMaxNutritionProtein());
             }
         }
@@ -378,16 +381,45 @@ namespace ModTime.Managers
         {
             if (LocalMultipliers.CustomNutritionMultipliers != null)
             {
-                var customordered = LocalMultipliers.CustomNutritionMultipliers.OrderBy(x => x.Key).ToArray();
-                int curIdx = 0;
-
-                using (var custmulV = new GUILayout.VerticalScope(GUI.skin.box))
+                CustomMultipliers = LocalMultipliers.CustomNutritionMultipliers;
+               var customordered = CustomMultipliers.OrderBy(x => x.Key).ToArray();
+            
+                using (new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     foreach (KeyValuePair<string, float> customconditionMul in customordered)
                     {
-                        float mul = LocalMultipliers.GetCustomMultiplierValue(customconditionMul.Key);
-                        mul = CustomHorizontalSlider(customconditionMul.Value, 0f, customconditionMul.Value + 1f, customconditionMul.Key);                       
-                        curIdx++;
+                        GUI.contentColor = DefaultContentColor;
+                        if (customconditionMul.Key.ToLower().Contains("carbo"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Carbo);
+                        }
+                        if (customconditionMul.Key.ToLower().Contains("fat"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Fat);
+                        }
+                        if (customconditionMul.Key.ToLower().Contains("proteins"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Proteins);
+                        }
+                        if (customconditionMul.Key.ToLower().Contains("oxygen") || customconditionMul.Key.ToLower().Contains("hydration"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Hydration);
+                        }
+                        if (customconditionMul.Key.ToLower().Contains("energy") || customconditionMul.Key.ToLower().Contains("stamina") || customconditionMul.Key.ToLower().Contains("health"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Energy);
+                        }
+
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
+                        {
+                            GUILayout.Label($"{customconditionMul.Key} ({(float)Math.Round(CustomMultipliers[customconditionMul.Key], 2, MidpointRounding.ToEven)})");
+                            CustomMultipliers[customconditionMul.Key] = GUILayout.HorizontalSlider(CustomMultipliers[customconditionMul.Key], 0f, customconditionMul.Value + 1f);
+                            if (GUI.changed)
+                            {
+                                HasChanged = true;
+                                SetCustomNutritionMultiplierValue(customconditionMul.Key, CustomMultipliers[customconditionMul.Key]);
+                            }
+                        }
                     }
                 }
             }
@@ -397,13 +429,40 @@ namespace ModTime.Managers
         {
             if (LocalMultipliers.DefaultNutritionMultipliers != null)
             {
-                var ordered = LocalMultipliers.DefaultNutritionMultipliers.OrderBy(x => x.Key).ToList();
+                DefaultMultipliers = LocalMultipliers.DefaultNutritionMultipliers;
+                var ordered =DefaultMultipliers.OrderBy(x => x.Key).ToList();
 
-                using (var defmulV = new GUILayout.VerticalScope(GUI.skin.box))
+                using (new GUILayout.VerticalScope(GUI.skin.box))
                 {
                     foreach (KeyValuePair<string, float> conditionMul in ordered)
                     {
-                        CustomHorizontalSlider(conditionMul.Value, 0f, conditionMul.Value + 1f, conditionMul.Key);
+                        GUI.contentColor = DefaultContentColor;
+                        if (conditionMul.Key.ToLower().Contains("carbo"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Carbo);
+                        }
+                        if (conditionMul.Key.ToLower().Contains("fat"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Fat);
+                        }
+                        if (conditionMul.Key.ToLower().Contains("proteins"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Proteins);
+                        }
+                        if (conditionMul.Key.ToLower().Contains("oxygen") || conditionMul.Key.ToLower().Contains("hydration"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Hydration);
+                        }
+                        if (conditionMul.Key.ToLower().Contains("energy") || conditionMul.Key.ToLower().Contains("stamina") || conditionMul.Key.ToLower().Contains("health"))
+                        {
+                            GUI.contentColor = IconColors.GetColor(IconColors.Icon.Energy);
+                        }
+
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
+                        {
+                            GUILayout.Label($"{conditionMul.Key} ({(float)Math.Round(DefaultMultipliers[conditionMul.Key], 2, MidpointRounding.ToEven)})");
+                            GUILayout.HorizontalSlider(DefaultMultipliers[conditionMul.Key], 0f, conditionMul.Value + 1f);                         
+                        }
                     }
                 }
             }
@@ -495,35 +554,28 @@ namespace ModTime.Managers
             }
         }
 
-        public float CustomHorizontalSlider(float sliderValue, float sliderMinValue, float sliderMaxValue, string labelText)
+        public float GetCustomNutritionMultiplierValue(string name)
         {
-            GUI.contentColor = DefaultContentColor;
-            if (labelText.ToLower().Contains("carbo"))
+            if (CustomMultipliers.ContainsKey(name))
             {
-                GUI.contentColor = IconColors.GetColor(IconColors.Icon.Carbo);
+                return CustomMultipliers[name];
             }
-            if (labelText.ToLower().Contains("fat"))
+            else
             {
-                GUI.contentColor = IconColors.GetColor(IconColors.Icon.Fat);
+                return -1f;
             }
-            if (labelText.ToLower().Contains("proteins"))
-            {
-                GUI.contentColor = IconColors.GetColor(IconColors.Icon.Proteins);
-            }
-            if (labelText.ToLower().Contains("oxygen") || labelText.ToLower().Contains("hydration"))
-            {
-                GUI.contentColor = IconColors.GetColor(IconColors.Icon.Hydration);
-            }
-            if (labelText.ToLower().Contains("energy") || labelText.ToLower().Contains("stamina") || labelText.ToLower().Contains("health"))
-            {
-                GUI.contentColor = IconColors.GetColor(IconColors.Icon.Energy);
-            }
+        }
 
-            using (var sliderHScope = new GUILayout.HorizontalScope(GUI.skin.box))
+        public bool SetCustomNutritionMultiplierValue(string name, float value)
+        {
+            if (CustomMultipliers.ContainsKey(name))
             {
-                GUILayout.Label($"{labelText} ({(float)Math.Round(sliderValue, 2, MidpointRounding.ToEven)})");
-                sliderValue = GUILayout.HorizontalSlider(sliderValue, sliderMinValue, sliderMaxValue);
-                return sliderValue;
+                CustomMultipliers[name] = value;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 

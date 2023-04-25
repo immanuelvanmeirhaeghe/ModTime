@@ -32,9 +32,9 @@ namespace ModTime
 
         private static readonly string ModName = nameof(ModTime);
 
-        private static float ModTimeScreenTotalWidth { get; set; } = 500f;
-        private static float ModTimeScreenTotalHeight { get; set; } = 450f;      
-        private static float ModTimeScreenMinWidth { get; set; } = 500f;
+        private static float ModTimeScreenTotalWidth { get; set; } = 800f;
+        private static float ModTimeScreenTotalHeight { get; set; } = 500f;      
+        private static float ModTimeScreenMinWidth { get; set; } = 800f;
         private static float ModTimeScreenMaxWidth { get; set; } = Screen.width;
         private static float ModTimeScreenMinHeight { get; set; } = 50f;
         private static  float ModTimeScreenMaxHeight { get; set; } = Screen.height;
@@ -43,12 +43,12 @@ namespace ModTime
         private static bool IsModTimeMinimized { get; set; } = false;
         private static int ModTimeScreenId { get; set; }
 
-        private static float HUDTimeScreenTotalWidth { get; set; } = 300f;
-        private static float HUDTimeScreenTotalHeight { get; set; } = 300f;
-        private static float HUDTimeScreenMinWidth { get; set; } = 300f;
-        private static float HUDTimeScreenMinHeight { get; set; } = 300f;
-        private static float HUDTimeScreenMaxWidth { get; set; } = 300f;
-        private static float HUDTimeScreenMaxHeight { get; set; } = 300f;
+        private static float HUDTimeScreenTotalWidth { get; set; } = 150f;
+        private static float HUDTimeScreenTotalHeight { get; set; } = 150f;
+        private static float HUDTimeScreenMinWidth { get; set; } = 150f;
+        private static float HUDTimeScreenMinHeight { get; set; } = 50f;
+        private static float HUDTimeScreenMaxWidth { get; set; } = 150f;
+        private static float HUDTimeScreenMaxHeight { get; set; } = 150f;
         private static float HUDTimeScreenStartPositionX { get; set; } = 0f;
         private static float HUDTimeScreenStartPositionY { get; set; } = Screen.height - HUDTimeScreenTotalHeight - 75f;
         private static bool IsHUDTimeMinimized { get; set; }
@@ -104,11 +104,26 @@ namespace ModTime
             stretchWidth = true,
             wordWrap = true
         };
+        private GUIStyle ToggleButton => new GUIStyle(GUI.skin.toggle)
+        {
+            alignment = TextAnchor.MiddleCenter,
+            fontSize = 12,            
+            stretchWidth = true
+        };
 
         public GUIStyle ColoredToggleValueTextLabel(bool enabled, Color enabledColor, Color disabledColor)
         {
             GUIStyle style = TextLabel;
             style.normal.textColor = enabled ? enabledColor : disabledColor;
+            return style;
+        }
+
+        public GUIStyle ColoredToggleButton(bool activated, Color enabledColor, Color disabledColor)
+        {
+            GUIStyle style = ToggleButton;
+            style.active.textColor = activated ? enabledColor : disabledColor;
+            style.onActive.textColor = activated ? enabledColor : disabledColor;
+            style = GUI.skin.button;
             return style;
         }
 
@@ -810,27 +825,26 @@ namespace ModTime
                         GUILayout.Label("Weather Info", ColoredSubHeaderLabel(Color.cyan));
                         using (new GUILayout.HorizontalScope(GUI.skin.box))
                         {
-                            GUILayout.Label($"Current setting: ", ColoredFieldNameLabel(Color.cyan));
-                            GUILayout.Label($"{LocalWeatherManager.IsRainEnabled}", ColoredToggleFieldValueLabel(LocalWeatherManager.IsRainEnabled, Color.cyan, Color.cyan));
-                        }
-                        using (new GUILayout.HorizontalScope(GUI.skin.box))
-                        {
                             GUILayout.Label($"Current weather: ", ColoredFieldNameLabel(Color.cyan));
                             GUILayout.Label(LocalWeatherManager.GetCurrentWeatherInfo(), ColoredFieldValueLabel(Color.cyan));
                         }
-                        GUILayout.Label($"Click  [switch weather] to change the weather.", TextLabel);
 
-                        bool _isRainEnabled = LocalWeatherManager.IsRainEnabled;
-                        LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch weather", GUI.skin.button, GUILayout.Width(150f));
-                        if (_isRainEnabled != LocalWeatherManager.IsRainEnabled)
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
                         {
-                            if (LocalWeatherManager.IsRainEnabled)
+                            GUILayout.Label($"To change the weather, click ", TextLabel);
+                            bool _isRainEnabled = LocalWeatherManager.IsRainEnabled;
+                            LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch weather", ColoredToggleButton(LocalWeatherManager.IsRainEnabled,Color.green,DefaultColor), GUILayout.Width(150f));
+                            if (_isRainEnabled != LocalWeatherManager.IsRainEnabled)
                             {
-                                _ = LocalWeatherManager.StartRain();
-                            }
-                            else
-                            {
-                                _ = LocalWeatherManager.StopRain();
+                                if (LocalWeatherManager.IsRainEnabled)
+                                {
+                                    _ = LocalWeatherManager.StartRain();                                  
+                                }
+                                else
+                                {
+                                    _ = LocalWeatherManager.StopRain();
+                                }
+                                ShowHUDBigInfo(HUDBigInfoMessage($"Weather was switched.\n{LocalWeatherManager.GetCurrentWeatherInfo()} ", MessageType.Info, Color.green), 3f);
                             }
                         }
                     }
@@ -946,24 +960,25 @@ namespace ModTime
                 {
                     using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"Current {nameof(LocalTimeManager.DayTimeScaleInMinutes)}", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"Current daytime length in minutes: ", ColoredFieldNameLabel(Color.cyan));
                         GUILayout.Label($"{LocalTimeManager.DayTimeScaleInMinutes}", ColoredFieldValueLabel(Color.cyan));
                     }
                     using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
-                        GUILayout.Label($"Current {nameof(LocalTimeManager.NightTimeScaleInMinutes)}: ", ColoredFieldNameLabel(Color.cyan));
+                        GUILayout.Label($"Current night time length in minutes: ", ColoredFieldNameLabel(Color.cyan));
                         GUILayout.Label($"{LocalTimeManager.NightTimeScaleInMinutes}", ColoredFieldValueLabel(Color.cyan));
                     }
 
-                    GUILayout.Label("Change scales for in-game day - and night time length in real-life minutes. To set, click [Apply]", TextLabel);
+                    GUILayout.Label("The scaling is based on 24 hours =  720 minutes daytime +  720 minutes night time = real-time", ColoredCommentLabel(Color.yellow));
 
+                    GUILayout.Label("Change scales for in-game day - and night time length in real-life minutes.", TextLabel);
                     using (new GUILayout.HorizontalScope(GUI.skin.box))
                     {
                         GUILayout.Label("Daytime length: ", TextLabel);
-                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes, TextLabel);
+                        LocalTimeManager.DayTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.DayTimeScaleInMinutes, FormInputTextField);
                         GUILayout.Label("Night time length: ", TextLabel);
-                        LocalTimeManager.NightTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.NightTimeScaleInMinutes, TextLabel);
-                        if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(200f)))
+                        LocalTimeManager.NightTimeScaleInMinutes = GUILayout.TextField(LocalTimeManager.NightTimeScaleInMinutes, FormInputTextField);
+                        if (GUILayout.Button("Apply", GUI.skin.button, GUILayout.Width(150f)))
                         {
                             OnClickSetTimeScalesButton();
                         }
@@ -1104,77 +1119,87 @@ namespace ModTime
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
-                using (var positionScope = new GUILayout.VerticalScope(GUI.skin.label))
+                using (new GUILayout.VerticalScope(GUI.skin.label))
                 {
                     GUILayout.Label($"Avoid any player condition depletion!", TextLabel);
-                    ConditionParameterLossOption();
-
-                    GUILayout.Label($"Choose which condition multipliers to use:", TextLabel);
-                    GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredCommentLabel(Color.yellow));
-                    ConditionOption();
-
-                    using (new GUILayout.VerticalScope(GUI.skin.box))
+                    CheatConditionOption();
+                    if (!Cheats.m_GodMode)
                     {
-                        if (GUILayout.Button($"Default multipliers"))
+                        ConditionParameterLossOption();
+                        
+                        GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredCommentLabel(Color.yellow));
+
+                        GUILayout.Label($"Choose which condition multipliers to use:", TextLabel);                       
+                        ConditionOption();
+
+                        using (new GUILayout.VerticalScope(GUI.skin.box))
                         {
-                            ToggleShowUI(1);
-                        }
-                        if (ShowDefaultMuls)
-                        {
-                            DefaultMulsScrollViewBox();
+                            if (GUILayout.Button($"Default multipliers"))
+                            {
+                                ToggleShowUI(1);
+                            }
+                            if (ShowDefaultMuls)
+                            {
+                                DefaultMulsScrollViewBox();
+                            }
+
+                            if (GUILayout.Button($"Custom multipliers"))
+                            {
+                                ToggleShowUI(2);
+                            }
+                            if (ShowCustomMuls)
+                            {
+                                CustomMulsScrollViewBox();
+                            }
                         }
 
-                        if (GUILayout.Button($"Custom multipliers"))
+                        using (new GUILayout.HorizontalScope(GUI.skin.box))
                         {
-                            ToggleShowUI(2);
+                            if (GUILayout.Button("Apply", GUI.skin.button))
+                            {
+                                if (LocalHealthManager.IsParameterLossBlocked)
+                                {
+                                    LocalHealthManager.BlockParametersLoss();
+                                }
+                                else
+                                {
+                                    LocalHealthManager.UnblockParametersLoss();
+                                }
+                                ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
+
+                                LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
+                                ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
+                            }
+                            //if (GUILayout.Button("Save settings", GUI.skin.button))
+                            //{
+                            //    bool saved = LocalHealthManager.SaveSettings();
+                            //    if (saved)
+                            //    {
+                            //        ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
+                            //    }
+                            //    else
+                            //    {
+                            //        ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
+                            //    }
+                            //}
+                            //if (GUILayout.Button("Load settings", GUI.skin.button))
+                            //{
+                            //    bool loaded = LocalHealthManager.LoadSettings();
+                            //    if (loaded)
+                            //    {
+                            //        ShowHUDBigInfo(HUDBigInfoMessage("Loaded", MessageType.Info, Color.green));
+                            //    }
+                            //    else
+                            //    {
+                            //        ShowHUDBigInfo(HUDBigInfoMessage($"Could not load settings", MessageType.Warning, Color.yellow));
+                            //    }
+                            //}
                         }
-                        if (ShowCustomMuls)
-                        {
-                            CustomMulsScrollViewBox();
-                        }
+                    
                     }
-
-                    using (new GUILayout.HorizontalScope(GUI.skin.box))
+                    else
                     {
-                        if (GUILayout.Button("Apply", GUI.skin.button))
-                        {
-                            if (LocalHealthManager.IsParameterLossBlocked)
-                            {
-                                LocalHealthManager.BlockParametersLoss();
-                            }
-                            else
-                            {
-                                LocalHealthManager.UnblockParametersLoss();
-                            }
-                            ShowHUDBigInfo(HUDBigInfoMessage($"Parameter loss has been {(LocalHealthManager.GetParameterLossBlocked() ? "enabled" : "disabled")} ", MessageType.Info, Color.green));
-
-                            LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
-                            ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
-                        }
-                        if (GUILayout.Button("Save settings", GUI.skin.button))
-                        {
-                            bool saved = LocalHealthManager.SaveSettings();
-                            if (saved)
-                            {
-                                ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
-                            }
-                            else
-                            {
-                                ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
-                            }
-                        }
-                        if (GUILayout.Button("Load settings", GUI.skin.button))
-                        {
-                            bool loaded = LocalHealthManager.LoadSettings();
-                            if (loaded)
-                            {
-                                ShowHUDBigInfo(HUDBigInfoMessage("Loaded", MessageType.Info, Color.green));
-                            }
-                            else
-                            {
-                                ShowHUDBigInfo(HUDBigInfoMessage($"Could not load settings", MessageType.Warning, Color.yellow));
-                            }
-                        }
+                        GUILayout.Label($"Not available when in God mode.", ColoredCommentLabel(Color.yellow));
                     }
                 }
             }
@@ -1196,7 +1221,7 @@ namespace ModTime
         {
             try
             {
-                LocalHealthManager.IsParameterLossBlocked = GUILayout.Toggle(LocalHealthManager.IsParameterLossBlocked, $"Switch parameter loss on / off.", GUI.skin.toggle);
+                LocalHealthManager.IsParameterLossBlocked = GUILayout.Toggle(LocalHealthManager.IsParameterLossBlocked, $"Switch parameter loss on / off", ColoredToggleButton(LocalHealthManager.IsParameterLossBlocked, Color.green, DefaultColor), GUILayout.Width(150f));
             }
             catch (Exception exc)
             {
@@ -1204,9 +1229,21 @@ namespace ModTime
             }
         }
 
+        private void CheatConditionOption()
+        {
+            try
+            {
+                Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, $"Switch cheat on / off", ColoredToggleButton(Cheats.m_GodMode, Color.green, DefaultColor), GUILayout.Width(150f));
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(CheatConditionOption));
+            }
+        }
+
         private void CustomMulsScrollViewBox()
         {
-            using (var custommulsslidersscope = new GUILayout.VerticalScope(GUI.skin.box))
+            using (new GUILayout.VerticalScope(GUI.skin.box))
             {             
                 CustomMulsScrollView();
             }

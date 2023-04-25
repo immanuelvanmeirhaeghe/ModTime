@@ -328,11 +328,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\Enums.cs" />
-    <Compile Include="Data\Interfaces\IConfigurableMod.cs" />
-    <Compile Include="Data\Interfaces\IConfigurableModButton.cs" />
-    <Compile Include="Data\Modding\ConfigurableMod.cs" />
-    <Compile Include="Data\Modding\ConfigurableModButton.cs" />
-    <Compile Include="Data\Multipliers.cs" />
+    <Compile Include="Managers\Data\Interfaces\IConfigurableMod.cs" />
+    <Compile Include="Managers\Data\Interfaces\IConfigurableModButton.cs" />
+    <Compile Include="Managers\Data\Modding\ConfigurableMod.cs" />
+    <Compile Include="Managers\Data\Modding\ConfigurableModButton.cs" />
+    <Compile Include="Data\Player\Condition\Multipliers.cs" />
     <Compile Include="Extensions\PlayerExtended.cs" />
     <Compile Include="Managers\HealthManager.cs" />
     <Compile Include="Managers\TimeManager.cs" />
