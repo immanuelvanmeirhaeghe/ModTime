@@ -57,12 +57,11 @@ namespace ModTime.Managers
         {
             try
             {
-                SettingsLoaded = LoadSettings();
+              
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{nameof(Start)}");
-               
+                HandleException(exc, nameof(Start));               
             }
         }
 
