@@ -833,18 +833,31 @@ namespace ModTime
                         {
                             GUILayout.Label($"To change the weather, click ", TextLabel);
                             bool _isRainEnabled = LocalWeatherManager.IsRainEnabled;
-                            LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch weather", ColoredToggleButton(LocalWeatherManager.IsRainEnabled,Color.green,DefaultColor), GUILayout.Width(150f));
+                            LocalWeatherManager.IsRainEnabled = GUILayout.Toggle(LocalWeatherManager.IsRainEnabled, $"Switch weather", ColoredToggleButton(LocalWeatherManager.IsRainEnabled,Color.green,DefaultColor), GUILayout.ExpandWidth(true));
                             if (_isRainEnabled != LocalWeatherManager.IsRainEnabled)
                             {
                                 if (LocalWeatherManager.IsRainEnabled)
                                 {
-                                    _ = LocalWeatherManager.StartRain();                                  
+                                   if( LocalWeatherManager.StartRain())
+                                    {
+                                        ShowHUDBigInfo(HUDBigInfoMessage($"The rain will start falling", MessageType.Info, Color.green), 3f);
+                                    }
+                                    else
+                                    {
+                                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not change the weather!", MessageType.Warning, Color.red), 3f);
+                                    }
                                 }
                                 else
                                 {
-                                    _ = LocalWeatherManager.StopRain();
-                                }
-                                ShowHUDBigInfo(HUDBigInfoMessage($"Weather was switched.\n{LocalWeatherManager.GetCurrentWeatherInfo()} ", MessageType.Info, Color.green), 3f);
+                                    if(LocalWeatherManager.StopRain())
+                                    {
+                                        ShowHUDBigInfo(HUDBigInfoMessage($"The rain will stop falling", MessageType.Info, Color.green), 3f);
+                                    }
+                                    else
+                                    {
+                                        ShowHUDBigInfo(HUDBigInfoMessage($"Could not change the weather!", MessageType.Warning, Color.red), 3f);
+                                    }
+                                }                               
                             }
                         }
                     }
