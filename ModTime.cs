@@ -1121,16 +1121,14 @@ namespace ModTime
             {
                 using (new GUILayout.VerticalScope(GUI.skin.label))
                 {
-                    GUILayout.Label($"Avoid any player condition depletion!", TextLabel);
-                    CheatConditionOption();
+                    CheatModeOptionBox();
                     if (!Cheats.m_GodMode)
                     {
-                        ConditionParameterLossOption();
-                        
+                        ConditionParameterLossOptionBox();
+
                         GUILayout.Label($"Please note that only custom multipliers can be adjusted, not any default multiplier!", ColoredCommentLabel(Color.yellow));
 
-                        GUILayout.Label($"Choose which condition multipliers to use:", TextLabel);                       
-                        ConditionOption();
+                        ConditionOptionBox();
 
                         using (new GUILayout.VerticalScope(GUI.skin.box))
                         {
@@ -1170,32 +1168,7 @@ namespace ModTime
                                 LocalHealthManager.UpdateNutrition(LocalHealthManager.UseDefault);
                                 ShowHUDBigInfo(HUDBigInfoMessage($"Using {(LocalHealthManager.UseDefault ? "default multipliers" : "custom multipliers")} ", MessageType.Info, Color.green));
                             }
-                            //if (GUILayout.Button("Save settings", GUI.skin.button))
-                            //{
-                            //    bool saved = LocalHealthManager.SaveSettings();
-                            //    if (saved)
-                            //    {
-                            //        ShowHUDBigInfo(HUDBigInfoMessage("Saved", MessageType.Info, Color.green));
-                            //    }
-                            //    else
-                            //    {
-                            //        ShowHUDBigInfo(HUDBigInfoMessage($"Could not save settings", MessageType.Warning, Color.yellow));
-                            //    }
-                            //}
-                            //if (GUILayout.Button("Load settings", GUI.skin.button))
-                            //{
-                            //    bool loaded = LocalHealthManager.LoadSettings();
-                            //    if (loaded)
-                            //    {
-                            //        ShowHUDBigInfo(HUDBigInfoMessage("Loaded", MessageType.Info, Color.green));
-                            //    }
-                            //    else
-                            //    {
-                            //        ShowHUDBigInfo(HUDBigInfoMessage($"Could not load settings", MessageType.Warning, Color.yellow));
-                            //    }
-                            //}
                         }
-                    
                     }
                     else
                     {
@@ -1205,27 +1178,46 @@ namespace ModTime
             }
         }
 
-        private void ConditionOption()
+        private void CheatModeOptionBox()
         {
-            try
+            using (new GUILayout.VerticalScope(GUI.skin.label))
             {
-                LocalHealthManager.UseDefault = GUILayout.Toggle(LocalHealthManager.UseDefault, $"Switch between default (= on) or custom (= off) nutrition multipliers.", GUI.skin.toggle);
-            }
-            catch (Exception exc)
-            {
-                HandleException(exc, nameof(ConditionOption));
+                GUILayout.Label($"Avoid any player condition depletion!", TextLabel);
+
+                CheatConditionOption();
             }
         }
 
-        private void ConditionParameterLossOption()
+        private void ConditionOptionBox()
         {
             try
             {
-                LocalHealthManager.IsParameterLossBlocked = GUILayout.Toggle(LocalHealthManager.IsParameterLossBlocked, $"Switch parameter loss on / off", ColoredToggleButton(LocalHealthManager.IsParameterLossBlocked, Color.green, DefaultColor), GUILayout.Width(150f));
+                using (new GUILayout.HorizontalScope(GUI.skin.box)) 
+                {
+                    GUILayout.Label($"To change which nutrition multipliers to use, click ", TextLabel);
+                    LocalHealthManager.UseDefault = GUILayout.Toggle(LocalHealthManager.UseDefault, $"Switch to {(LocalHealthManager.UseDefault ? "custom" : "default" )} multipliers", ColoredToggleButton(LocalHealthManager.UseDefault, Color.green, DefaultColor), GUILayout.ExpandWidth(true));
+                } 
+                
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(ConditionParameterLossOption));
+                HandleException(exc, nameof(ConditionOptionBox));
+            }
+        }
+
+        private void ConditionParameterLossOptionBox()
+        {
+            try
+            {
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"To change parameter loss, click ", TextLabel);
+                    LocalHealthManager.IsParameterLossBlocked = GUILayout.Toggle(LocalHealthManager.IsParameterLossBlocked, $"Switch parameter loss {(LocalHealthManager.IsParameterLossBlocked ? "off" : "on")}", ColoredToggleButton(LocalHealthManager.IsParameterLossBlocked, Color.green, DefaultColor), GUILayout.ExpandWidth(true));
+                }                    
+            }
+            catch (Exception exc)
+            {
+                HandleException(exc, nameof(ConditionParameterLossOptionBox));
             }
         }
 
@@ -1233,7 +1225,11 @@ namespace ModTime
         {
             try
             {
-                Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, $"Switch cheat on / off", ColoredToggleButton(Cheats.m_GodMode, Color.green, DefaultColor), GUILayout.Width(150f));
+                using (new GUILayout.HorizontalScope(GUI.skin.box))
+                {
+                    GUILayout.Label($"To change cheat God mode, click ", TextLabel);
+                    Cheats.m_GodMode = GUILayout.Toggle(Cheats.m_GodMode, $"Switch cheat {(Cheats.m_GodMode ? "off" : "on")}", ColoredToggleButton(Cheats.m_GodMode, Color.green, DefaultColor), GUILayout.ExpandWidth(true));
+                }                   
             }
             catch (Exception exc)
             {
