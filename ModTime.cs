@@ -94,7 +94,7 @@ namespace ModTime
             => $"Permission to use mods and cheats in multiplayer was {permission} because {reason}.";
         private string HUDBigInfoMessage(string message, MessageType messageType, Color? headcolor = null)
             => $"<color=#{(headcolor != null ? ColorUtility.ToHtmlStringRGBA(headcolor.Value) : ColorUtility.ToHtmlStringRGBA(Color.red))}>{messageType}</color>\n{message}";
-        private void OnlyForSingleplayerOrWhenHostBox()
+        protected virtual void OnlyForSingleplayerOrWhenHostBox()
         {
             using (var infoScope = new GUILayout.HorizontalScope(GUI.skin.box))
             {
@@ -172,14 +172,14 @@ namespace ModTime
             }
         }
 
-        private void HandleException(Exception exc, string methodName)
+        protected virtual void HandleException(Exception exc, string methodName)
         {
             string info = $"[{ModName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
             Debug.Log(info);
         }
 
-        private void ModManager_onPermissionValueChanged(bool optionValue)
+        protected virtual void ModManager_onPermissionValueChanged(bool optionValue)
         {
             string reason = optionValue ? "the game host allowed usage" : "the game host did not allow usage";
             IsModActiveForMultiplayer = optionValue;
@@ -218,7 +218,7 @@ namespace ModTime
             LocalStylingManager = StylingManager.Get();
         }
 
-        private void EnableCursor(bool blockPlayer = false)
+        protected virtual void EnableCursor(bool blockPlayer = false)
         {
             CursorManager.Get().ShowCursor(blockPlayer);
             if (blockPlayer)
@@ -277,7 +277,7 @@ namespace ModTime
             }           
         }
 
-        private void ToggleShowUI(int controlId)
+        protected virtual void ToggleShowUI(int controlId)
         {
             switch (controlId)
             {
@@ -322,12 +322,12 @@ namespace ModTime
             }
         }
 
-        private void InitSkinUI()
+        protected virtual void InitSkinUI()
         {
             GUI.skin = ModAPI.Interface.Skin;
         }
 
-        private void ShowModTimeWindow()
+        protected virtual void ShowModTimeWindow()
         {
             if (ModTimeScreenId <= 0 || ModTimeScreenId == HUDTimeScreenId)
             {
@@ -335,13 +335,23 @@ namespace ModTime
             }
             string modTimeScreenTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
             ModTimeScreen = GUILayout.Window(ModTimeScreenId, ModTimeScreen, InitModTimeScreen, modTimeScreenTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModTimeScreenMinWidth), GUILayout.MaxWidth(ModTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModTimeScreenMinHeight), GUILayout.MaxHeight(ModTimeScreenMaxHeight));
+            OnResizingModTimeScreen();
         }
 
-        private void ModTimeScreenMenuBox()
+        protected virtual void OnResizingModTimeScreen()
+        {
+            if (IsModTimeResizing)
+            {
+                ModTimeScreen.width = ModTimeScreenStartSize.x + (UnityEngine.Event.current.mousePosition.x - MouseStartPos.x);
+                ModTimeScreen.height = ModTimeScreenStartSize.y + (UnityEngine.Event.current.mousePosition.y - MouseStartPos.y);
+            }
+        }
+
+        protected virtual void ModTimeScreenMenuBox()
         {
             string CollapseButtonText = IsModTimeMinimized ?  "O" :  "-";
 
-            if (GUI.Button(new Rect(ModTimeScreen.width - 60f, 0f, 20f, 20f), "==", GUI.skin.button))
+            if (GUI.Button(new Rect(ModTimeScreen.width - 60f, 0f, 20f, 20f), "=", GUI.skin.button))
             {
                 ResizeModTimeWindow();
             }
@@ -355,14 +365,9 @@ namespace ModTime
             }
         }
 
-        private void ResizeModTimeWindow()
+        protected virtual void ResizeModTimeWindow()
         {
-            if (IsModTimeResizing)
-            {
-                ModTimeScreen.width = ModTimeScreenStartSize.x + (UnityEngine.Event.current.mousePosition.x - MouseStartPos.x);
-                ModTimeScreen.height = ModTimeScreenStartSize.y + (UnityEngine.Event.current.mousePosition.y - MouseStartPos.y);
-            }
-            Rect resizeHandle = new Rect(ModTimeScreen.width - ModTimeScreenMinWidth, ModTimeScreen.height - ModTimeScreenMinHeight, ModTimeScreenMinWidth, ModTimeScreenMinHeight);
+            Rect resizeHandle = new Rect(ModTimeScreen.width - 60f, 0f, ModTimeScreenMinWidth, ModTimeScreenMinHeight);
             GUI.DrawTexture(resizeHandle, Texture2D.whiteTexture);
             if (UnityEngine.Event.current.type == EventType.MouseDown && resizeHandle.Contains(UnityEngine.Event.current.mousePosition))
             {
@@ -376,8 +381,12 @@ namespace ModTime
             }
         }
 
-        private void CollapseModTimeWindow()
+        protected virtual void CollapseModTimeWindow()
         {
+            if (IsModTimeResizing)
+            {
+                return;
+            }
             if (!IsModTimeMinimized)
             {
                 ModTimeScreen = new Rect(ModTimeScreen.x, ModTimeScreen.y, ModTimeScreenTotalWidth, ModTimeScreenMinHeight);
@@ -391,7 +400,7 @@ namespace ModTime
             ShowModTimeWindow();
         }
 
-        private void ShowHUDTimeWindow()
+        protected virtual void ShowHUDTimeWindow()
         {
             if (HUDTimeScreenId <= 0 || HUDTimeScreenId == ModTimeScreenId)
             {
@@ -402,7 +411,7 @@ namespace ModTime
             HUDTimeScreen = GUILayout.Window(HUDTimeScreenId, HUDTimeScreen, InitHUDTimeScreen, hudTimeScreenTitle, GUI.skin.label, GUILayout.ExpandWidth(true), GUILayout.MinWidth(HUDTimeScreenMinWidth), GUILayout.MaxWidth(HUDTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(HUDTimeScreenMinHeight), GUILayout.MaxHeight(HUDTimeScreenMaxHeight));
         }
 
-        private void CollapseHUDTimeWindow()
+        protected virtual void CollapseHUDTimeWindow()
         {
             if (!IsHUDTimeMinimized)
             {
@@ -417,7 +426,7 @@ namespace ModTime
             ShowHUDTimeWindow();
         }
 
-        private void CloseWindow(int controlId)
+        protected virtual void CloseWindow(int controlId)
         {
             switch (controlId)
             {
@@ -437,7 +446,7 @@ namespace ModTime
             }
         }
 
-        private void InitHUDTimeScreen(int windowID)
+        protected virtual void InitHUDTimeScreen(int windowID)
         {
             HUDTimeScreenStartPositionX = HUDTimeScreen.x;
             HUDTimeScreenStartPositionY = HUDTimeScreen.y;
@@ -460,7 +469,7 @@ namespace ModTime
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void HUDTimeViewBox()
+        protected virtual void HUDTimeViewBox()
         {
             using (new GUILayout.VerticalScope(GUI.skin.label))
             {
@@ -471,7 +480,7 @@ namespace ModTime
             }                
         }
 
-        private void HUDTimeMenuBox()
+        protected virtual void HUDTimeMenuBox()
         {
             string CollapseButtonText = IsHUDTimeMinimized ? "O" : "-";
 
@@ -485,7 +494,7 @@ namespace ModTime
             }
         }
 
-        private void InitModTimeScreen(int windowID)
+        protected virtual void InitModTimeScreen(int windowID)
         {
             ModTimeScreenStartPositionX = ModTimeScreen.x;
             ModTimeScreenStartPositionY = ModTimeScreen.y;
@@ -494,7 +503,7 @@ namespace ModTime
             using (new GUILayout.VerticalScope(GUI.skin.box))
             {
                 ModTimeScreenMenuBox();
-                if (!IsModTimeMinimized || !IsModTimeResizing)
+                if (!IsModTimeMinimized && !IsModTimeResizing)
                 {
                     ModTimeManagerBox();
                     WeatherManagerBox();
@@ -505,7 +514,7 @@ namespace ModTime
             GUI.DragWindow(new Rect(0f, 0f, 10000f, 10000f));
         }
 
-        private void HealthManagerBox()
+        protected virtual void HealthManagerBox()
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -537,7 +546,7 @@ namespace ModTime
             }
         }
 
-        private void TimeManagerBox()
+        protected virtual void TimeManagerBox()
         {
             if (LocalTimeManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -562,7 +571,7 @@ namespace ModTime
             }
         }
 
-        private void WeatherManagerBox()
+        protected virtual void WeatherManagerBox()
         {
             if (LocalWeatherManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -583,7 +592,7 @@ namespace ModTime
             }
         }
 
-        private void ModTimeManagerBox()
+        protected virtual void ModTimeManagerBox()
         {
             if (IsModActiveForSingleplayer || IsModActiveForMultiplayer)
             {
@@ -619,7 +628,7 @@ namespace ModTime
             }
         }
 
-        private void ModTimeInfoBox()
+        protected virtual void ModTimeInfoBox()
         {
             using (var modinfoScope = new GUILayout.VerticalScope(GUI.skin.box))
             {
@@ -668,7 +677,7 @@ namespace ModTime
             }
         }
 
-        private void MultiplayerOptionBox()
+        protected virtual void MultiplayerOptionBox()
         {
             try
             {
@@ -708,7 +717,7 @@ namespace ModTime
             }
         }
 
-        private void RainOption()
+        protected virtual void RainOption()
         {        
             try
             {
@@ -762,7 +771,7 @@ namespace ModTime
             }
         }
 
-        private void ShowHUDTimeOptionBox()
+        protected virtual void ShowHUDTimeOptionBox()
         {
             try
             {
@@ -791,7 +800,7 @@ namespace ModTime
             }
         }
 
-        private void WeatherManagerOption()
+        protected virtual void WeatherManagerOption()
         {
             try
             {
@@ -803,7 +812,7 @@ namespace ModTime
             }
         }
 
-        private void HealthManagerOption()
+        protected virtual void HealthManagerOption()
         {
             try
             {            
@@ -815,7 +824,7 @@ namespace ModTime
             }
         }
 
-        private void TimeManagerOption()
+        protected virtual void TimeManagerOption()
         {
             try
             {
@@ -827,7 +836,7 @@ namespace ModTime
             }
         }
 
-        private void DayCycleBox()
+        protected virtual void DayCycleBox()
         {
             if (LocalTimeManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -858,7 +867,7 @@ namespace ModTime
             }
         }
 
-        private void DayTimeScalesBox()
+        protected virtual void DayTimeScalesBox()
         {
             if (LocalTimeManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -897,7 +906,7 @@ namespace ModTime
             }
         }
 
-        private void TimeScalesBox()
+        protected virtual void TimeScalesBox()
         {
             if (LocalTimeManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -948,7 +957,7 @@ namespace ModTime
             }
         }
 
-        private void ConditionMultipliersBox()
+        protected virtual void ConditionMultipliersBox()
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -960,7 +969,7 @@ namespace ModTime
             }
         }
 
-        private void NutrientsSettingsBox()
+        protected virtual void NutrientsSettingsBox()
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -1010,7 +1019,7 @@ namespace ModTime
             }            
         }
 
-        private void ConditionMulsSettingsBox()
+        protected virtual void ConditionMulsSettingsBox()
         {
             if (LocalHealthManager.IsModEnabled && (IsModActiveForSingleplayer || IsModActiveForMultiplayer))
             {
@@ -1034,7 +1043,7 @@ namespace ModTime
             }
         }
 
-        private void CheatModeOptionBox()
+        protected virtual void CheatModeOptionBox()
         {
             try
             {
@@ -1057,7 +1066,7 @@ namespace ModTime
             }
         }
 
-        private void ConditionParameterLossOptionBox()
+        protected virtual void ConditionParameterLossOptionBox()
         {
             try
             {
@@ -1106,7 +1115,7 @@ namespace ModTime
             }
         }
 
-        private void MultipliersOptionBox()
+        protected virtual void MultipliersOptionBox()
         {
             try
             {
@@ -1168,7 +1177,7 @@ namespace ModTime
             }
         }
 
-        private void MultipliersBox()
+        protected virtual void MultipliersBox()
         {
             try
             {
@@ -1224,7 +1233,7 @@ namespace ModTime
             }
         }
 
-        private void OnClickSetTimeLengthInMinutesButton()
+        protected virtual void OnClickSetTimeLengthInMinutesButton()
         {
             try
             {
@@ -1244,7 +1253,7 @@ namespace ModTime
             }
         }
 
-        private void OnClickFastForwardDayCycleButton()
+        protected virtual void OnClickFastForwardDayCycleButton()
         {
             try
             {
@@ -1264,7 +1273,7 @@ namespace ModTime
             }
         }
 
-        private void OnClickFullyHealButton()
+        protected virtual void OnClickFullyHealButton()
         {
             try
             {
