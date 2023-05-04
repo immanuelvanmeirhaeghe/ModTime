@@ -10,6 +10,7 @@ namespace ModTime.Extensions
         {
             base.Start();
             new GameObject($"__{nameof(ModTime)}__").AddComponent<ModTime>();
+            new GameObject($"__{nameof(StylingManager)}__").AddComponent<StylingManager>();
             new GameObject($"__{nameof(WeatherManager)}__").AddComponent<WeatherManager>();
             new GameObject($"__{nameof(HealthManager)}__").AddComponent<HealthManager>();
             new GameObject($"__{nameof(TimeManager)}__").AddComponent<TimeManager>();

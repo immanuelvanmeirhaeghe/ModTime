@@ -17,20 +17,23 @@ namespace ModTime.Managers
         private static TimeManager Instance;
       
         private static readonly string ModuleName = nameof(TimeManager);
-        private static Color DefaultColor = GUI.color;
-        private static Color DefaultContentColor = GUI.contentColor;
-        private static Color DefaultBackGroundColor = GUI.backgroundColor;
 
         private static Watch LocalWatch;
 
         public bool UseDevice { get; set; } = false;
         public bool IsHUDTimeEnabled { get; set; } = false;
-        public string DayTimeScaleInMinutes { get; set; } = "20";
-        public string NightTimeScaleInMinutes { get; set; } = "10";
+        public string DayLengthInMinutes { get; set; } = "20";
+        public string NightLengthInMinutes { get; set; } = "10";
+
+        public float DefaultDayLengthInMinutes => 20f;
+        public float DefaultNightLengthInMinutes => 10f;
 
         public TimeScaleModes SelectedTimeScaleMode { get; set; } = TimeScaleModes.Normal;
         public int SelectedTimeScaleModeIndex { get; set; } = 0;
-    
+        public string DayCycleSetMessage(string daytime)
+        => $"{daytime}";
+        public string TimeScalesSetMessage(string dayTimeScale, string nightTimeScale)
+            => $"Time scales set:\nDay time passes in " + dayTimeScale + " realtime minutes\nand night time in " + nightTimeScale + " realtime minutes.";
         public string SystemInfoServerRestartMessage(Color? color = null)
         {
             return SystemInfoChatMessage("<color=#" + (color.HasValue ? ColorUtility.ToHtmlStringRGBA(color.Value) : ColorUtility.ToHtmlStringRGBA(Color.yellow)) + "><b>Attention all players!</b></color> \nGame host " + GetHostPlayerName() + " is restarting the server. \nYou will be automatically rejoining in a short while. Please hold.", color);
@@ -67,16 +70,19 @@ namespace ModTime.Managers
                 return false;
             }
         }
-        public bool IsWatchInitialized { get; set; } = false;
+
         public bool WasPausedLastFrame { get; set; } = false;
 
         public int TimeScaleModeIndex { get; set; } = 0;
         public TimeScaleModes TimeScaleMode { get; set; } = TimeScaleModes.Normal;        
         public float TimeScaleFactor { get; set; } = 0f;
         public float SlowMotionFactor { get; set; } = 1f;
+        public float SelectedSlowMotionFactor { get; set; } = 1f;
         private float WantedSlowMotionFactor { get; set; } = 1f;
         private float ChangeSlowMotionTime { get; set; } = 0f;
+
         public float CurentTimeInMinutes { get; set; } = 0f;
+    
         public bool IsModEnabled { get; set; } = false;
 
         public TimeManager()
@@ -92,6 +98,7 @@ namespace ModTime.Managers
 
         protected virtual void Start()
         {
+            InitData();
         }
 
         protected virtual void Update()
@@ -136,19 +143,19 @@ namespace ModTime.Managers
                 m_TODSky.Cycle.DateTime.Second / 60f;
         }
 
-        private void HandleException(Exception exc, string methodName)
+        protected virtual void HandleException(Exception exc, string methodName)
         {
             string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
             Debug.Log(info);
         }
 
-        public void Pause(bool pause)
+        public virtual void Pause(bool pause)
         {
             MainLevel.Instance.Pause(pause);
         }
 
-        public bool SetTimeScalesInMinutes(int dayLengthInMinutes, int nightLengthInMinutes)
+        public bool SetTimeLengthInMinutes(int dayLengthInMinutes, int nightLengthInMinutes)
         {
             try
             {
@@ -175,7 +182,7 @@ namespace ModTime.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, nameof(SetTimeScalesInMinutes));
+                HandleException(exc, nameof(SetTimeLengthInMinutes));
                 return false;
             }
         }
@@ -257,10 +264,7 @@ namespace ModTime.Managers
                     break;
                 case 3:
                     SelectedTimeScaleMode = TimeScaleModes.Paused;
-                    break;
-                case 4:
-                    SelectedTimeScaleMode = TimeScaleModes.Custom;
-                    break;
+                    break;         
                 default:
                     SelectedTimeScaleMode = TimeScaleModes.Normal;                    
                     break;
@@ -303,8 +307,50 @@ namespace ModTime.Managers
 
         public string HUDDateString()
         {
-            TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;          
-            string hudDateString = $"{skyCycle.Year}-{ skyCycle.Month}-{skyCycle.Day}";
+            TOD_CycleParameters skyCycle = MainLevel.Instance.m_TODSky.Cycle;
+            string currentMonth = "";
+            switch (skyCycle.Month)
+            {
+                case 1:
+                   currentMonth = "JAN";
+                    break;
+                case 2:
+                    currentMonth = "FEB";
+                    break;
+                case 3:
+                    currentMonth = "MAR";
+                    break;
+                case 4:
+                    currentMonth = "APR";
+                    break;
+                case 5:
+                    currentMonth = "MAY";
+                    break;
+                case 6:
+                    currentMonth = "JUN";
+                    break;
+                case 7:
+                    currentMonth = "JUL";
+                    break;
+                case 8:
+                    currentMonth = "AUG";
+                    break;
+                case 9:
+                    currentMonth = "SEP";
+                    break;
+                case 10:
+                    currentMonth = "OCT";
+                    break;
+                case 11:
+                    currentMonth = "NOV";
+                    break;
+                case 12:
+                    currentMonth = "DEC";
+                    break;
+                default:
+                    break;
+            }
+            string hudDateString = $"{skyCycle.Day}-{currentMonth}-{skyCycle.Year}";
             return $"{hudDateString}";
         }
 
@@ -325,9 +371,6 @@ namespace ModTime.Managers
                 case TimeScaleModes.Paused:
                     factor = 0f;
                     break;
-                case TimeScaleModes.Custom:
-                    factor = SlowMotionFactor;
-                    break;
                 default:
                     factor = 1f;
                     break;
@@ -344,5 +387,6 @@ namespace ModTime.Managers
         {
             return Time.timeScale;
         }
+
     }
 }

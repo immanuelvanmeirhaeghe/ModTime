@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace ModManager.Data.Interfaces
+namespace ModTime.Data.Interfaces
 {
     /// <summary>
     /// Represents a configurable mod

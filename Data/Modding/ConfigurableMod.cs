@@ -1,12 +1,7 @@
-﻿using ModManager.Data.Interfaces;
-using System;
+﻿using ModTime.Data.Interfaces;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using UnityEngine;
 
-namespace ModManager.Data.Modding
+namespace ModTime.Data.Modding
 {
     /// <summary>
     /// Represents  a base class for a  mod 

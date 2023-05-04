@@ -1,8 +1,7 @@
-﻿using ModManager.Data.Interfaces;
-using System.Reflection;
+﻿using ModTime.Data.Interfaces;
 using UnityEngine;
 
-namespace ModManager.Data.Modding
+namespace ModTime.Data.Modding
 {
     /// <summary>
     /// Represents a base class

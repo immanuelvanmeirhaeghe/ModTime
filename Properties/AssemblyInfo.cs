@@ -8,10 +8,10 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("ModAPI.ModTime")]
 [assembly: AssemblyDescription("ModTime is a mod for Green Hell that allows a player to set in-game player condition multipliers, date and day and night time scales in real time minutes. Ingame time can be fast forwarded to the next morning 5AM or night 10PM.  It also allows to manipulate weather to make it rain or stop raining.  Press Keypad2 (default) or the key configurable in ModAPI to open the mod screen.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("[Dragon Legion] Immaanuel")]
+[assembly: AssemblyCompany("[Dragon Legion]Immaanuel")]
 [assembly: AssemblyProduct("ModAPI.ModTime")]
 [assembly: AssemblyCopyright("Copyright ©  2023")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyTrademark("Freeware")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("1.0.3.6")]
-[assembly: AssemblyFileVersion("1.0.3.6")]
+[assembly: AssemblyVersion("1.0.3.8")]
+[assembly: AssemblyFileVersion("1.0.3.8")]

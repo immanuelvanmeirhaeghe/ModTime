@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace ModManager.Data.Interfaces
+namespace ModTime.Data.Interfaces
 {
     /// <summary>
     /// Represents a configurable mod button

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace ModTime.Managers
@@ -43,14 +39,14 @@ namespace ModTime.Managers
             LocalRainManager = RainManager.Get();
         }
 
-        private void HandleException(Exception exc, string methodName)
+       protected virtual void HandleException(Exception exc, string methodName)
         {
             string info = $"[{ModuleName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
             ModAPI.Log.Write(info);
             Debug.Log(info);
         }
 
-        public bool StartRain()
+        public virtual bool StartRain()
         {
             try
             {
@@ -65,7 +61,7 @@ namespace ModTime.Managers
             }
         }
 
-        public bool StopRain()
+        public virtual bool StopRain()
         {
             try
             {
@@ -80,7 +76,7 @@ namespace ModTime.Managers
             }
         }
 
-        public bool IsRainFallingNow()
+        public virtual bool IsRainFallingNow()
         {
             if (IsModEnabled)
             {
@@ -89,7 +85,7 @@ namespace ModTime.Managers
             return false;
         }
 
-        public string GetCurrentWeatherInfo()
+        public virtual string GetCurrentWeatherInfo()
         {
             try
             {
@@ -97,7 +93,7 @@ namespace ModTime.Managers
             }
             catch (Exception exc)
             {
-                HandleException(exc, $"{nameof(StopRain)}");
+                HandleException(exc, $"{nameof(GetCurrentWeatherInfo)}");
                 return string.Empty;
             }
         }

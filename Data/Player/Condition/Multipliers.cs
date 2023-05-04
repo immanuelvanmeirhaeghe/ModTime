@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
-using static P2PStats.ReplicationStat;
 
 namespace ModTime.Data.Player.Condition
 {
@@ -19,6 +14,52 @@ namespace ModTime.Data.Player.Condition
         }
 
         public static Multipliers Get() => Instance;
+
+        public float m_PrevStamina;
+
+        public float m_MaxStamina;
+
+        public float m_LastDecreaseStaminaTime;
+
+        public float m_StaminaRenerationDelay = 2f;
+
+        public float m_HPProp = 100f;
+
+        public bool m_IsLowStamina;
+
+        public float m_StaminaDepletedLevel = 5f;
+
+        public float m_LowStaminaLevel = 10f;
+
+        public float m_LowStaminaRecoveryLevel = 20f;
+
+        public Dictionary<int, float> m_StaminaDecreaseMap = new Dictionary<int, float>();
+
+        public Dictionary<int, float> m_EnergyDecreaseMap = new Dictionary<int, float>();
+
+        public float m_HealingLevel = 0.25f;
+
+        public float m_IncreaseEnergyLastTime = float.MinValue;
+
+        public float m_IncreaseHPLastTime = float.MinValue;
+
+        public float m_DirtAddChoppingPlants = 0.01f;
+
+        public float m_DirtAddPickickgUpHeavyObject = 0.01f;
+
+        public float m_DirtAddSleepingOnGround = 0.01f;
+
+        public float m_DirtAddUsingMud = 0.01f;
+
+        public float m_DirtAddCombat = 0.01f;
+
+        public float m_DirtAddLossConsciousness = 0.01f;
+
+        public float m_DirtAddTakeAnimalDroppings = 0.01f;
+
+        public float m_DirtAddPlow = 0.01f;
+
+        public float m_LastOxygen = 100f;
 
         #region  NutritionFat
 
@@ -57,56 +98,61 @@ namespace ModTime.Data.Player.Condition
 
         #region Hydration
 
-        private float m_HydrationConsumptionRunMul { get; set; } = 0.5f;
-        private float m_HydrationConsumptionPerSecond { get; set; } = 0.5f;
-        private float m_HydrationConsumptionDuringFeverPerSecond { get; set; } = 0.5f;
+        public float m_HydrationConsumptionRunMul { get; set; } = 0.5f;
+        public float m_HydrationConsumptionPerSecond { get; set; } = 0.5f;
+        public float m_HydrationConsumptionDuringFeverPerSecond { get; set; } = 0.5f;
 
         #endregion
 
         #region Health
 
-        private float m_HealthLossPerSecondNoNutrition { get; set; } = 0.05f;
-        private float m_HealthLossPerSecondNoHydration { get; set; } = 0.05f;
-        private float m_HealthLossPerSecondNoOxygen { get; set; } = 10f;
+        public float m_HealthLossPerSecondNoNutrition { get; set; } = 0.05f;
+        public float m_HealthLossPerSecondNoHydration { get; set; } = 0.05f;
+        public float m_HealthLossPerSecondNoOxygen { get; set; } = 10f;
+     
+        public float m_HealthRecoveryPerDayEasyMode { get; set; } = 0.1f;
+        public float m_HealthRecoveryPerDayNormalMode { get; set; } = 0.1f;
+        public float m_HealthRecoveryPerDayHardMode { get; set; } = 0.1f;
+     
 
         #endregion
 
         #region Stamina
 
-        private float m_StaminaConsumptionWalkPerSecond { get; set; } = 1f;
-        private float m_StaminaConsumptionRunPerSecond { get; set; } = 1f;
-        private float m_StaminaConsumptionDepletedPerSecond { get; set; } = 1f;
-        private float m_StaminaRegenerationPerSecond { get; set; } = 1f;
+        public float m_StaminaConsumptionWalkPerSecond { get; set; } = 1f;
+        public float m_StaminaConsumptionRunPerSecond { get; set; } = 1f;
+        public float m_StaminaConsumptionDepletedPerSecond { get; set; } = 1f;
+        public float m_StaminaRegenerationPerSecond { get; set; } = 1f;
 
         #endregion
 
         #region Oxygen
 
-        private float m_OxygenConsumptionPerSecond { get; set; } = 1f;
+        public float m_OxygenConsumptionPerSecond { get; set; } = 1f;
 
         #endregion
 
         #region Energy
 
-        private float m_EnergyConsumptionPerSecond { get; set; } = 0.1f;
-        private float m_EnergyConsumptionPerSecondNoNutrition { get; set; } = 0.1f;
-        private float m_EnergyConsumptionPerSecondFever { get; set; } = 0.1f;
-        private float m_EnergyConsumptionPerSecondFoodPoison { get; set; } = 0.1f;
-        private float m_EnergyLossDueLackOfNutritionPerSecond { get; set; } = 1f;
-        private float m_EnergyRecoveryDueNutritionPerSecond { get; set; } = 1f;
-        private float m_EnergyRecoveryDueHydrationPerSecond { get; set; } = 1f;
+        public float m_EnergyConsumptionPerSecond { get; set; } = 0.1f;
+        public float m_EnergyConsumptionPerSecondNoNutrition { get; set; } = 0.1f;
+        public float m_EnergyConsumptionPerSecondFever { get; set; } = 0.1f;
+        public float m_EnergyConsumptionPerSecondFoodPoison { get; set; } = 0.1f;
+        public float m_EnergyLossDueLackOfNutritionPerSecond { get; set; } = 1f;
+        public float m_EnergyRecoveryDueNutritionPerSecond { get; set; } = 1f;
+        public float m_EnergyRecoveryDueHydrationPerSecond { get; set; } = 1f;
 
         #endregion
 
         #region Dirtiness
 
-        private float m_DirtinessIncreasePerSecond { get; set; } = 0.1f;
+        public float m_DirtinessIncreasePerSecond { get; set; } = 0.1f;
 
         #endregion
 
         #region Multipliers
 
-        public Dictionary<string, float> DefaultNutritionMultipliers => new Dictionary<string, float>
+        public Dictionary<string, float> DefaultMultipliers => new Dictionary<string, float>
             {
                 { "m_NutritionFatConsumptionMulNoCarbs", 1f },
                 { "m_NutritionProteinsConsumptionMulNoCarbs", 1f },
@@ -143,6 +189,9 @@ namespace ModTime.Data.Player.Condition
                 { "m_HealthLossPerSecondNoNutrition", 0.05f },
                 { "m_HealthLossPerSecondNoHydration", 0.05f },
                 { "m_HealthLossPerSecondNoOxygen", 10f },
+                { "m_HealthRecoveryPerDayEasyMode", 0.1f },
+                { "m_HealthRecoveryPerDayNormalMode", 0.1f },
+                { "m_HealthRecoveryPerDayHardMode", 0.1f },
                 { "m_EnergyLossDueLackOfNutritionPerSecond", 1f },
                 { "m_EnergyRecoveryDueNutritionPerSecond", 1f },
                 { "m_EnergyRecoveryDueHydrationPerSecond", 1f },
@@ -151,9 +200,9 @@ namespace ModTime.Data.Player.Condition
 
         public float GetDefaultMultiplierValue(string name)
         {
-            if (DefaultNutritionMultipliers.ContainsKey(name))
+            if (DefaultMultipliers.ContainsKey(name))
             {
-                return DefaultNutritionMultipliers[name];
+                return DefaultMultipliers[name];
             }
             else
             {
@@ -162,14 +211,14 @@ namespace ModTime.Data.Player.Condition
         }
 
         private Dictionary<string, float> _customMuls;
-        public Dictionary<string, float> CustomNutritionMultipliers
+        public Dictionary<string, float> CustomMultipliers
         {
             get
             {
                 if(_customMuls == null)
                 {
                     _customMuls = new Dictionary<string, float>();
-                    foreach (var item in DefaultNutritionMultipliers)
+                    foreach (var item in DefaultMultipliers)
                     {
                         _customMuls.Add(item.Key, item.Value);
                     }                    
@@ -181,9 +230,9 @@ namespace ModTime.Data.Player.Condition
 
         public float GetCustomMultiplierValue(string name)
         {
-            if (CustomNutritionMultipliers.ContainsKey(name))
+            if (CustomMultipliers.ContainsKey(name))
             {
-                return CustomNutritionMultipliers[name];
+                return CustomMultipliers[name];
             }
             else
             {
@@ -191,11 +240,11 @@ namespace ModTime.Data.Player.Condition
             }
         }
 
-        public bool SetCustomNutritionMultiplierValue(string name, float value)
+        public bool SetCustomMultiplierValue(string name, float value)
         {
-            if (CustomNutritionMultipliers.ContainsKey(name))
+            if (CustomMultipliers.ContainsKey(name))
             {
-                CustomNutritionMultipliers[name] = value;
+                CustomMultipliers[name] = value;
                 return true;
             }
             else
