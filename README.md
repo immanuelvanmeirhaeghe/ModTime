@@ -14,14 +14,15 @@ _Health Management_
 It allows to manage in-game player condition multipliers.
 
 ## Info and download
-
-|My mod list on Git Hub | https://github.com/immanuelvanmeirhaeghe|
+| Name | Link |
 |--|--|
+| ModTime | https://modapi.survivetheforest.net/mod/179/modtime |
 |ModAPI official Discord | https://discord.gg/VAMuXyd |
+|My mod list on Git Hub | https://github.com/immanuelvanmeirhaeghe|
 
 ## Usage
 
-_Multiplayer option_
+_Multiplayer Option_
 
 To use in multiplayer, you MUST also use the mod [ModManager](https://dev.azure.com/dragonlegion/ModManager).
 Open a chat screen and send **_!requestMods_** command through chat.
@@ -33,13 +34,15 @@ Press **[Keypad5]** button to open the mod UI. Optionally, configure a new keybi
 - Press the new key to bind
 
 ### Weather Manager
+
 _Weather Options_
 
 Change the in-game weather:
 - Switch the option to make it start or stop raining
 
 ### Time Manager
-Time Options:
+
+_Time Options_
 
 _Change the in-game day and night cycle length in a scale to real-time._
 This scale is compared to a max. time span of 720 minutes or 12 hours of daytime or night time, for a total of 24 hours or a day. By default, daytime scales to 20 and night time scales to 10. To have time pass by approx. as in real-time, so 1 min in game is 1 min in real-time, set the scale to 720.
@@ -59,7 +62,8 @@ _Fast-forward time of day to night time at 10PM or the following morning daytime
 Click the [FFW >>] button.
 
 ### Health Manager
-Health Options:
+
+_Health Options_
 
 In case of emergency, you can
 - _Switch on / off God mode_! Toggle the related option
