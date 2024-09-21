@@ -24,9 +24,9 @@ namespace ModTime
         private static readonly string RuntimeConfiguration = Path.Combine(Application.dataPath.Replace("GH_Data", "Mods"), $"{nameof(RuntimeConfiguration)}.xml");
 
         private static readonly string ModName = nameof(ModTime);
-
+        public string ModTimeScreenTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
         private static float ModTimeScreenTotalWidth { get; set; } = 700f;
-        private static float ModTimeScreenTotalHeight { get; set; } = 350f;      
+        private static float ModTimeScreenTotalHeight { get; set; } = 500f;      
         private static float ModTimeScreenMinWidth { get; set; } = 700f;
         private static float ModTimeScreenMaxWidth { get; set; } = Screen.width;
         private static float ModTimeScreenMinHeight { get; set; } = 50f;
@@ -172,11 +172,11 @@ namespace ModTime
             }
         }
 
-        protected virtual void HandleException(Exception exc, string methodName)
+        private void HandleException(Exception exc, string methodName)
         {
-            string info = $"[{ModName}:{methodName}] throws exception -  {exc.TargetSite?.Name}:\n{exc.Message}\n{exc.InnerException}\n{exc.Source}\n{exc.StackTrace}";
+            string info = $"[{ModName}:{methodName}] throws exception:\n{exc}";
             ModAPI.Log.Write(info);
-            Debug.Log(info);
+            ShowHUDBigInfo(HUDBigInfoMessage(exc.Message, MessageType.Error, Color.red));
         }
 
         protected virtual void ModManager_onPermissionValueChanged(bool optionValue)
@@ -332,9 +332,8 @@ namespace ModTime
             if (ModTimeScreenId <= 0 || ModTimeScreenId == HUDTimeScreenId)
             {
                 ModTimeScreenId = ModTimeScreen.GetHashCode();
-            }
-            string modTimeScreenTitle = $"{ModName} created by [Dragon Legion] Immaanuel#4300";
-            ModTimeScreen = GUILayout.Window(ModTimeScreenId, ModTimeScreen, InitModTimeScreen, modTimeScreenTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModTimeScreenMinWidth), GUILayout.MaxWidth(ModTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModTimeScreenMinHeight), GUILayout.MaxHeight(ModTimeScreenMaxHeight));
+            }            
+            ModTimeScreen = GUILayout.Window(ModTimeScreenId, ModTimeScreen, InitModTimeScreen, ModTimeScreenTitle, GUI.skin.window, GUILayout.ExpandWidth(true), GUILayout.MinWidth(ModTimeScreenMinWidth), GUILayout.MaxWidth(ModTimeScreenMaxWidth), GUILayout.ExpandHeight(true), GUILayout.MinHeight(ModTimeScreenMinHeight), GUILayout.MaxHeight(ModTimeScreenMaxHeight));
             OnResizingModTimeScreen();
         }
 
@@ -404,7 +403,7 @@ namespace ModTime
         {
             if (HUDTimeScreenId <= 0 || HUDTimeScreenId == ModTimeScreenId)
             {
-                HUDTimeScreenId = HUDTimeScreen.GetHashCode() + 1;
+                HUDTimeScreenId = GetHashCode() + 1;
                 //ModAPI.Log.Write($"{nameof(HUDTimeScreen)} window id set to {HUDTimeScreenId}");
             }
             string hudTimeScreenTitle = $"";
